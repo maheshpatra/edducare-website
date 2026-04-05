@@ -681,17 +681,17 @@ const WebsiteSettings: React.FC = () => {
                                     <div className="form-group-fancy">
                                         <label>Sender Identity</label>
                                         <div style={{ display: 'grid', gap: 16 }}>
-                                            <input className="form-input" value={emailConfig.from_name} onChange={e => setEmailConfig(p => ({ ...p, from_name: e.target.value }))} placeholder="Principal - Edducare School" />
-                                            <input className="form-input" value={emailConfig.from_email} onChange={e => setEmailConfig(p => ({ ...p, from_email: e.target.value }))} placeholder="admissions@school.com" />
+                                            <input className="form-input-fancy" value={emailConfig.from_name} onChange={e => setEmailConfig(p => ({ ...p, from_name: e.target.value }))} placeholder="Principal - Edducare School" />
+                                            <input className="form-input-fancy" value={emailConfig.from_email} onChange={e => setEmailConfig(p => ({ ...p, from_email: e.target.value }))} placeholder="admissions@school.com" />
                                         </div>
                                     </div>
                                     <div className="form-group-fancy">
                                         <label>Server Details</label>
                                         <div style={{ display: 'grid', gap: 16 }}>
-                                            <input className="form-input" value={emailConfig.smtp_host} onChange={e => setEmailConfig(p => ({ ...p, smtp_host: e.target.value }))} placeholder="smtp.gmail.com" />
+                                            <input className="form-input-fancy" value={emailConfig.smtp_host} onChange={e => setEmailConfig(p => ({ ...p, smtp_host: e.target.value }))} placeholder="smtp.gmail.com" />
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                                <input type="number" className="form-input" value={emailConfig.smtp_port} onChange={e => setEmailConfig(p => ({ ...p, smtp_port: parseInt(e.target.value) || 587 }))} placeholder="587" />
-                                                <select className="form-input" value={emailConfig.smtp_crypto} onChange={e => setEmailConfig(p => ({ ...p, smtp_crypto: e.target.value }))}>
+                                                <input type="number" className="form-input-fancy" value={emailConfig.smtp_port} onChange={e => setEmailConfig(p => ({ ...p, smtp_port: parseInt(e.target.value) || 587 }))} placeholder="587" />
+                                                <select className="form-input-fancy" value={emailConfig.smtp_crypto} onChange={e => setEmailConfig(p => ({ ...p, smtp_crypto: e.target.value }))}>
                                                     <option value="tls">TLS</option>
                                                     <option value="ssl">SSL</option>
                                                     <option value="none">None</option>
@@ -702,8 +702,8 @@ const WebsiteSettings: React.FC = () => {
                                     <div className="form-group-fancy">
                                         <label>Authentication</label>
                                         <div style={{ display: 'grid', gap: 16 }}>
-                                            <input className="form-input" value={emailConfig.smtp_user} onChange={e => setEmailConfig(p => ({ ...p, smtp_user: e.target.value }))} placeholder="SMTP Username" />
-                                            <input type="password" className="form-input" value={emailConfig.smtp_pass} onChange={e => setEmailConfig(p => ({ ...p, smtp_pass: e.target.value }))} placeholder="••••••••••••" />
+                                            <input className="form-input-fancy" value={emailConfig.smtp_user} onChange={e => setEmailConfig(p => ({ ...p, smtp_user: e.target.value }))} placeholder="SMTP Username" />
+                                            <input type="password" className="form-input-fancy" value={emailConfig.smtp_pass} onChange={e => setEmailConfig(p => ({ ...p, smtp_pass: e.target.value }))} placeholder="••••••••••••" />
                                         </div>
                                     </div>
                                 </div>
