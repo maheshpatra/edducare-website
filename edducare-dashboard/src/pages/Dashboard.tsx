@@ -50,14 +50,23 @@ const Dashboard: React.FC = () => {
                 const payload = res.data?.data || res.data?.analytics || res.data;
                 
                 if (payload && typeof payload === 'object') {
-                    setStats(prev => ({ 
-                        ...prev, 
-                        ...payload,
-                        // Ensure arrays are actually arrays
-                        class_strength: Array.isArray(payload.class_strength) ? payload.class_strength : prev.class_strength,
-                        gender_distribution: Array.isArray(payload.gender_distribution) ? payload.gender_distribution : prev.gender_distribution,
-                        recent_activities: Array.isArray(payload.recent_activities) ? payload.recent_activities : prev.recent_activities
-                    }));
+                    // Normalize data structure
+                    const counts = payload.counts || {};
+                    const processed = {
+                        total_students: counts.total_students ?? payload.total_students ?? 0,
+                        total_teachers: counts.total_teachers ?? payload.total_teachers ?? 0,
+                        fee_collected: counts.fee_collected ?? payload.fee_collected ?? 0,
+                        fee_pending: counts.fee_pending ?? payload.fee_pending ?? 0,
+                        average_attendance: counts.avg_attendance ?? payload.average_attendance ?? 0,
+                        pending_fee_count: counts.pending_fee_count ?? payload.pending_fee_count ?? 0,
+                        total_books: counts.total_books ?? payload.total_books ?? 0,
+                        exams_pending: counts.exams_pending ?? payload.exams_pending ?? 0,
+                        class_strength: payload.class_strength || [],
+                        gender_distribution: payload.gender_distribution || [],
+                        recent_activities: payload.recent_activities || []
+                    };
+
+                    setStats(processed as any);
                 }
                 setLastUpdated(new Date().toLocaleTimeString());
             } catch (err) {

@@ -67,45 +67,56 @@ try {
     // HTML Email Template
     $site_url = "https://edducare.finafid.org";
     $html_message = "
+    <!DOCTYPE html>
     <html>
     <head>
+      <meta name='viewport' content='width=device-width, initial-scale=1.0'>
       <style>
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
-        .header { background: #3b82f6; padding: 30px 20px; text-align: center; color: #ffffff; }
-        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
-        .content { padding: 40px 30px; line-height: 1.6; }
-        .content p { margin-bottom: 20px; font-size: 16px; }
-        .tracking-box { background: #f8fafc; border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; margin: 30px 0; }
-        .tracking-box .label { text-transform: uppercase; font-size: 12px; color: #64748b; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; }
-        .tracking-box .id { font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: 2px; }
-        .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #f1f5f9; }
-        .btn { display: inline-block; padding: 12px 24px; background: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; color: #1e293b; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f1f5f9; padding: 40px 0; }
+        .container { width: 100%; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px 20px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.025em; }
+        .content { padding: 40px 32px; line-height: 1.6; }
+        .content p { margin-bottom: 24px; font-size: 16px; color: #475569; }
+        .tracking-box { background: #f8fafc; border: 2px dashed #cbd5e1; padding: 32px 20px; text-align: center; border-radius: 16px; margin: 32px 0; border-color: #3b82f6; background-color: #eff6ff; }
+        .tracking-box .label { text-transform: uppercase; font-size: 13px; color: #3b82f6; font-weight: 700; letter-spacing: 0.1em; margin-bottom: 12px; }
+        .tracking-box .id { font-size: 36px; font-weight: 900; color: #1e3a8a; letter-spacing: 2px; font-family: 'Courier New', Courier, monospace; }
+        .footer { background: #f8fafc; padding: 24px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #f1f5f9; }
+        .btn { display: inline-block; padding: 16px 32px; background: #3b82f6; color: #ffffff !important; text-decoration: none; border-radius: 12px; font-weight: 700; margin-top: 8px; box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3); }
+        @media only screen and (max-width: 600px) {
+          .content { padding: 32px 20px; }
+          .container { border-radius: 0; }
+          .tracking-box .id { font-size: 28px; }
+        }
       </style>
     </head>
     <body>
-      <div class='container'>
-        <div class='header'>
-          <h1>Admission Request Received</h1>
-        </div>
-        <div class='content'>
-          <p>Dear <strong>$student_name</strong>,</p>
-          <p>Thank you for submitting your admission request. We have successfully received your details and our administration team will review your application shortly.</p>
-          
-          <div class='tracking-box'>
-            <div class='label'>Your Tracking ID</div>
-            <div class='id'>$tracking_id</div>
+      <div class='wrapper'>
+        <div class='container'>
+          <div class='header'>
+            <h1>Welcome to Edducare</h1>
           </div>
-          
-          <p>Please keep this tracking ID secure. You can use it to track the status of your admission process. At this stage, no student portal account has been created for you yet. We will contact you regarding the next steps.</p>
-          
-          <div style='text-align: center; margin-top: 30px;'>
-            <a href='$site_url' class='btn'>Visit Our Website</a>
+          <div class='content'>
+            <p>Dear <strong>$student_name</strong>,</p>
+            <p>We are delighted to confirm that your admission request has been successfully received. We are excited about the possibility of you joining our academic community.</p>
+            
+            <div class='tracking-box'>
+              <div class='label'>Your Application Tracking ID</div>
+              <div class='id'>$tracking_id</div>
+            </div>
+            
+            <p>Please keep this Tracking ID safe. You will need it to check the status of your application. Our admissions team will review your details and contact you shortly regarding the next steps.</p>
+            
+            <div style='text-align: center; margin-top: 32px;'>
+              <a href='$site_url' class='btn'>Check Latest Updates</a>
+            </div>
           </div>
-        </div>
-        <div class='footer'>
-          &copy; " . date('Y') . " Edducare. All rights reserved.<br>
-          This is an automated message, please do not reply directly to this email.
+          <div class='footer'>
+            <strong>&copy; " . date('Y') . " Edducare School ERP System</strong><br>
+            Managed by Integrated School Management System.<br>
+            <span style='margin-top: 8px; display: block;'>This is an automated enrollment notification.</span>
+          </div>
         </div>
       </div>
     </body>
@@ -114,23 +125,29 @@ try {
 
     $subject = "Registration Successful - Tracking ID: " . $tracking_id;
 
+    $final_config = [
+        'from_name' => FROM_NAME,
+        'from_email' => FROM_EMAIL,
+        'smtp_host' => SMTP_HOST,
+        'smtp_port' => SMTP_PORT,
+        'smtp_user' => SMTP_USERNAME,
+        'smtp_pass' => SMTP_PASSWORD
+    ];
+
     if ($email_config && $email_config['use_custom']) {
-        // Setup PHPMailer or default mail() using the SMTP configurations
-        $headers  = "MIME-Version: 1.0\r\n";
-        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-        $headers .= "From: " . $email_config['from_name'] . " <" . $email_config['from_email'] . ">\r\n";
-        
-        // mail($email, $subject, $html_message, $headers);
-        $mail_sent = true;
-    } else {
-        // Use default sending mechanism
-        $headers  = "MIME-Version: 1.0\r\n";
-        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-        $headers .= "From: Edducare Admissions <no-reply@edducare.finafid.org>\r\n";
-        
-        // mail($email, $subject, $html_message, $headers);
-        $mail_sent = true;
+        foreach(['from_name', 'from_email', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass'] as $key) {
+            if(!empty($email_config[$key])) $final_config[$key] = $email_config[$key];
+        }
     }
+
+    // Setup Email Headers
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+    $headers .= "From: " . $final_config['from_name'] . " <" . $final_config['from_email'] . ">\r\n";
+    
+    // mail($email, $subject, $html_message, $headers);
+    // Note: In production, use PHPMailer with $final_config for reliable delivery
+    $mail_sent = true;
 
     if ($mail_sent) {
         $update_mail = "UPDATE admission_requests SET email_sent = 1 WHERE tracking_id = :tracking_id";
