@@ -1,0 +1,153 @@
+import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Students from './pages/Students';
+import Teachers from './pages/Teachers';
+import Classes from './pages/Classes';
+import Attendance from './pages/Attendance';
+import Fees from './pages/Fees';
+import Library from './pages/Library';
+import Assignments from './pages/Assignments';
+import Exams from './pages/Exams';
+import Timetable from './pages/Timetable';
+import Announcements from './pages/Announcements';
+import Analytics from './pages/Analytics';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+import WebsiteSettings from './pages/WebsiteSettings';
+import AcademicSessions from './pages/AcademicSessions';
+
+import SuperAdminDashboard from './pages/superadmin/Dashboard';
+import SuperAdminSchools from './pages/superadmin/Schools';
+import SuperAdminPackages from './pages/superadmin/Packages';
+
+import './index.css';
+
+const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
+  '/': { title: 'Dashboard', subtitle: 'Welcome back! Here\'s what\'s happening today.' },
+  '/students': { title: 'Students', subtitle: 'Manage student enrollment, records, and profiles.' },
+  '/teachers': { title: 'Teachers', subtitle: 'Manage teaching staff and assignments.' },
+  '/classes': { title: 'Classes', subtitle: 'Manage classes, sections, and academic structure.' },
+  '/attendance': { title: 'Attendance', subtitle: 'Mark and track student attendance.' },
+  '/fees': { title: 'Fees', subtitle: 'Manage fee collection and payment records.' },
+  '/library': { title: 'Library', subtitle: 'Manage books, issues, and returns.' },
+  '/assignments': { title: 'Assignments', subtitle: 'Create and manage student assignments.' },
+  '/exams': { title: 'Examinations', subtitle: 'Schedule and manage school examinations.' },
+  '/timetable': { title: 'Timetable', subtitle: 'View and manage class timetables.' },
+  '/announcements': { title: 'Announcements', subtitle: 'Publish and manage school announcements.' },
+  '/analytics': { title: 'Analytics', subtitle: 'Deep insights into school performance.' },
+  '/reports': { title: 'Reports', subtitle: 'Generate and download detailed reports.' },
+  '/sessions': { title: 'Academic Sessions', subtitle: 'Manage academic years and active sessions.' },
+  '/settings': { title: 'Settings', subtitle: 'Configure school and system preferences.' },
+  '/website': { title: 'Website Settings', subtitle: 'Customize your school website appearance and content.' },
+  '/superadmin/schools': { title: 'Managed Schools', subtitle: 'Oversee and control all schools on the platform.' },
+  '/superadmin/packages': { title: 'Pricing Models', subtitle: 'Manage subscription plans and pricing.' },
+};
+
+const AppShell: React.FC = () => {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
+  const [pathname, setPathname] = useState(window.location.pathname);
+
+  // listen to route changes to update title
+  React.useEffect(() => {
+    const handler = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-base)' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="spinner" style={{ width: 40, height: 40, margin: '0 auto 16px' }} />
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Loading Edducare…</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  const pageInfo = PAGE_TITLES[pathname] ?? { title: 'Edducare', subtitle: '' };
+
+  return (
+    <div className="app-shell">
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(p => !p)} />
+
+      <div className="main-content">
+        <Header
+          title={pageInfo.title}
+          subtitle={pageInfo.subtitle}
+          onMenuToggle={() => setCollapsed(p => !p)}
+        />
+
+        <main className="page-content">
+          <Routes>
+            <Route path="/" element={user?.role === 'super_admin' ? <SuperAdminDashboard /> : <Dashboard />} />
+            <Route path="/students" element={<Students />} />
+            <Route path="/teachers" element={<Teachers />} />
+            <Route path="/classes" element={<Classes />} />
+            <Route path="/attendance" element={<Attendance />} />
+            <Route path="/fees" element={<Fees />} />
+            <Route path="/library" element={<Library />} />
+            <Route path="/assignments" element={<Assignments />} />
+            <Route path="/exams" element={<Exams />} />
+            <Route path="/timetable" element={<Timetable />} />
+            <Route path="/announcements" element={<Announcements />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/sessions" element={<AcademicSessions />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/website" element={<WebsiteSettings />} />
+
+            {/* Super Admin Routes */}
+            <Route path="/superadmin/schools" element={<SuperAdminSchools />} />
+            <Route path="/superadmin/packages" element={<SuperAdminPackages />} />
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+const App: React.FC = () => (
+  <BrowserRouter>
+    <AuthProvider>
+      <AppShell />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: 'var(--bg-elevated)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--bg-border)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '0.875rem',
+          },
+          success: { iconTheme: { primary: '#10b981', secondary: 'white' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: 'white' } },
+          duration: 3000,
+        }}
+      />
+    </AuthProvider>
+  </BrowserRouter>
+);
+
+export default App;
