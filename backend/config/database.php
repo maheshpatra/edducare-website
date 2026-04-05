@@ -1,15 +1,17 @@
 <?php
 date_default_timezone_set('Asia/Kolkata');
-class Database {
+class Database
+{
     private $host = 'localhost';
     private $db_name = 'u391322954_edducare';
     private $username = 'u391322954_finafid';
     private $password = '0[B]$/>Na';
     private $conn;
 
-    public function getConnection() {
+    public function getConnection()
+    {
         $this->conn = null;
-        
+
         try {
             $this->conn = new PDO(
                 "mysql:host=" . $this->host . ";dbname=" . $this->db_name,
@@ -21,10 +23,10 @@ class Database {
                     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"
                 )
             );
-        } catch(PDOException $exception) {
+        } catch (PDOException $exception) {
             echo "Connection error: " . $exception->getMessage();
         }
-        
+
         return $this->conn;
     }
 }

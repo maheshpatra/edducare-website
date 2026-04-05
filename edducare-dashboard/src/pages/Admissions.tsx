@@ -33,7 +33,7 @@ const Admissions: React.FC = () => {
                 page,
                 search,
                 status: statusFilter,
-                limit: 20
+                limit: 16
             });
             if (res.data.success) {
                 setRequests(res.data.data);

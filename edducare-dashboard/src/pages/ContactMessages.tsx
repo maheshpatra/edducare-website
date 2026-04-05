@@ -31,7 +31,7 @@ const ContactMessages: React.FC = () => {
                 page,
                 search,
                 status: statusFilter,
-                limit: 20
+                limit: 16
             });
             if (res.data.success) {
                 setMessages(res.data.data);
@@ -70,7 +70,7 @@ const ContactMessages: React.FC = () => {
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Manage messages from your website contact form.</p>
                    </div>
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: { base: 16, sm: 0 } }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 16 }}>
                     <div className="search-bar" style={{ flex: 1, minWidth: 240 }}>
                         <Search size={15} style={{ color: 'var(--text-muted)' }} />
                         <input

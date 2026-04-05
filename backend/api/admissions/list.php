@@ -26,7 +26,7 @@ if ($user['role'] === 'super_admin' && isset($_GET['school_id'])) {
 }
 
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
+$limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 16;
 $offset = ($page - 1) * $limit;
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 $status = isset($_GET['status']) ? trim($_GET['status']) : '';
