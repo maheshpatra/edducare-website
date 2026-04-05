@@ -1,16 +1,37 @@
-import React, { useState } from 'react';
-import { useSchool } from '../context/SchoolContext';
-import { motion } from 'framer-motion';
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle } from 'lucide-react';
+import axios from 'axios';
 
 export default function Contact() {
-  const { activeSchool } = useSchool();
+  const { activeSchool, API_BASE } = useSchool();
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    subject: 'General Inquiry',
+    message: ''
+  });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 4000);
+    setIsSubmitting(true);
+    try {
+      const res = await axios.post(`${API_BASE}/submit_contact`, {
+        ...formData,
+        school_id: activeSchool.id
+      });
+      if (res.data.success) {
+        setSubmitted(true);
+      }
+    } catch (err) {
+      alert("Failed to send message. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
   };
 
   const fadeInUp = {
@@ -76,20 +97,20 @@ export default function Contact() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Full Name</label>
-                      <input type="text" required className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all" placeholder="Your name" />
+                      <input type="text" name="full_name" value={formData.full_name} onChange={handleChange} required className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all" placeholder="Your name" />
                     </div>
                     <div>
                       <label className="block text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Email</label>
-                      <input type="email" required className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all" placeholder="your@email.com" />
+                      <input type="email" name="email" value={formData.email} onChange={handleChange} required className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all" placeholder="your@email.com" />
                     </div>
                   </div>
                   <div>
                     <label className="block text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Phone Number</label>
-                    <input type="tel" className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all" placeholder="+91 XXXXXXXXXX" />
+                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all" placeholder="+91 XXXXXXXXXX" />
                   </div>
                   <div>
                     <label className="block text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Subject</label>
-                    <select className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all text-slate-600">
+                    <select name="subject" value={formData.subject} onChange={handleChange} className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all text-slate-600">
                       <option>General Inquiry</option>
                       <option>Admission Query</option>
                       <option>Fee Structure</option>
@@ -99,10 +120,10 @@ export default function Contact() {
                   </div>
                   <div>
                     <label className="block text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Message</label>
-                    <textarea rows="5" required className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all resize-none" placeholder="Type your message..."></textarea>
+                    <textarea name="message" value={formData.message} onChange={handleChange} rows="5" required className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/10 transition-all resize-none" placeholder="Type your message..."></textarea>
                   </div>
-                  <button type="submit" className="btn-primary w-full text-lg">
-                    Send Message <Send className="ml-2 w-5 h-5" />
+                  <button type="submit" disabled={isSubmitting} className="btn-primary w-full text-lg">
+                    {isSubmitting ? 'Sending...' : 'Send Message'} <Send className="ml-2 w-5 h-5" />
                   </button>
                 </form>
               )}

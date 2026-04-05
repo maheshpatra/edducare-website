@@ -470,6 +470,10 @@ export const websiteService = {
 
     /** POST /website/email_config */
     updateEmailConfig: (data: any) => api.post('/website/email_config', data),
+
+    /** GET /website/contact_list */
+    listContactMessages: (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
+        api.get('/website/contact_list', { params }),
 };
 
 // ─── Admissions ───────────────────────────────────────────────────────────────

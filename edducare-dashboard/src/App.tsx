@@ -23,6 +23,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import WebsiteSettings from './pages/WebsiteSettings';
 import Admissions from './pages/Admissions';
+import ContactMessages from './pages/ContactMessages';
 import AcademicSessions from './pages/AcademicSessions';
 
 import SuperAdminDashboard from './pages/superadmin/Dashboard';
@@ -49,6 +50,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/settings': { title: 'Settings', subtitle: 'Configure school and system preferences.' },
   '/website': { title: 'Website Settings', subtitle: 'Customize your school website appearance and content.' },
   '/admissions': { title: 'Admissions', subtitle: 'Review and manage student admission requests.' },
+  '/messages': { title: 'Contact Messages', subtitle: 'Respond to student and visitor inquiries.' },
   '/superadmin/schools': { title: 'Managed Schools', subtitle: 'Oversee and control all schools on the platform.' },
   '/superadmin/packages': { title: 'Pricing Models', subtitle: 'Manage subscription plans and pricing.' },
 };
@@ -117,6 +119,7 @@ const AppShell: React.FC = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/website" element={<WebsiteSettings />} />
             <Route path="/admissions" element={<Admissions />} />
+            <Route path="/messages" element={<ContactMessages />} />
 
             {/* Super Admin Routes */}
             <Route path="/superadmin/schools" element={<SuperAdminSchools />} />
