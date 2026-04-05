@@ -589,47 +589,59 @@ const WebsiteSettings: React.FC = () => {
             {/* ═══ ADMISSIONS TAB ═══ */}
             {activeTab === 'admissions' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    <div className="card" style={{ padding: 28 }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 20, color: 'var(--text-primary)' }}>
-                            <FileText size={18} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
-                            Admission Form Data Collection
-                        </h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 24 }}>
-                            Select which fields should be visible and required on your school's public website admission form.
-                        </p>
+                    <div className="card" style={{ padding: 32 }}>
+                        <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(59,130,246,0.1)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <FileText size={28} />
+                            </div>
+                            <div>
+                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: 6 }}>Admission Form Configuration</h3>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: 600 }}>
+                                    Control exactly which data points you collect from prospective students on your website. 
+                                    Enable required flags to ensure you get critical information.
+                                </p>
+                            </div>
+                        </div>
                         
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1fr) auto auto', gap: '16px 24px', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--bg-border)', paddingBottom: 8 }}>Field Name</div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--bg-border)', paddingBottom: 8, textAlign: 'center' }}>Enabled</div>
-                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', borderBottom: '1px solid var(--bg-border)', paddingBottom: 8, textAlign: 'center' }}>Required</div>
+                        <div style={{ background: 'var(--bg-elevated)', borderRadius: 20, border: '1px solid var(--bg-border)', overflow: 'hidden' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 120px 120px', gap: 1, background: 'var(--bg-border)' }}>
+                                <div style={{ background: 'var(--bg-surface)', padding: '16px 24px', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>Field Name</div>
+                                <div style={{ background: 'var(--bg-surface)', padding: '16px 24px', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', textAlign: 'center' }}>Visible</div>
+                                <div style={{ background: 'var(--bg-surface)', padding: '16px 24px', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', textAlign: 'center' }}>Required</div>
 
-                            {Object.entries(admissionFields).map(([key, config]) => (
-                                <React.Fragment key={key}>
-                                    <div style={{ textTransform: 'capitalize', color: 'var(--text-secondary)' }}>
-                                        {key.replace(/_/g, ' ')}
-                                    </div>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <input type="checkbox" checked={config.enabled} 
-                                            onChange={e => {
-                                                const checked = e.target.checked;
-                                                setAdmissionFields(p => ({ ...p, [key]: { ...p[key], enabled: checked, required: checked ? p[key].required : false } }));
-                                            }} 
-                                            style={{ width: 18, height: 18, cursor: 'pointer' }}
-                                        />
-                                    </div>
-                                    <div style={{ textAlign: 'center' }}>
-                                        <input type="checkbox" checked={config.required} disabled={!config.enabled}
-                                            onChange={e => setAdmissionFields(p => ({ ...p, [key]: { ...p[key], required: e.target.checked } }))} 
-                                            style={{ width: 18, height: 18, cursor: config.enabled ? 'pointer' : 'not-allowed', opacity: config.enabled ? 1 : 0.5 }}
-                                        />
-                                    </div>
-                                </React.Fragment>
-                            ))}
+                                {Object.entries(admissionFields).map(([key, config]) => (
+                                    <React.Fragment key={key}>
+                                        <div style={{ background: 'var(--bg-surface)', padding: '20px 24px', borderTop: '1px solid var(--bg-border)' }}>
+                                            <div style={{ fontWeight: 600, color: 'var(--text-primary)', textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                {key === 'student_name' ? 'Full legal name of the student' : key === 'desired_class' ? 'Which grade they are applying for' : 'Additional contact/personal info'}
+                                            </div>
+                                        </div>
+                                        <div style={{ background: 'var(--bg-surface)', padding: '20px 24px', borderTop: '1px solid var(--bg-border)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <label className="switch">
+                                                <input type="checkbox" checked={config.enabled} 
+                                                    onChange={e => {
+                                                        const checked = e.target.checked;
+                                                        setAdmissionFields(p => ({ ...p, [key]: { ...p[key], enabled: checked, required: checked ? p[key].required : false } }));
+                                                    }} 
+                                                />
+                                                <span className="slider round"></span>
+                                            </label>
+                                        </div>
+                                        <div style={{ background: 'var(--bg-surface)', padding: '20px 24px', borderTop: '1px solid var(--bg-border)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <input type="checkbox" checked={config.required} disabled={!config.enabled}
+                                                onChange={e => setAdmissionFields(p => ({ ...p, [key]: { ...p[key], required: e.target.checked } }))} 
+                                                style={{ width: 18, height: 18, cursor: config.enabled ? 'pointer' : 'not-allowed', opacity: config.enabled ? 1 : 0.3 }}
+                                            />
+                                        </div>
+                                    </React.Fragment>
+                                ))}
+                            </div>
                         </div>
                     </div>
                     
-                    <button onClick={handleSaveAdmissionConfig} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8, padding: '14px 32px' }}>
-                        {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Save Fields
+                    <button onClick={handleSaveAdmissionConfig} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 10, padding: '16px 40px', borderRadius: 14 }}>
+                        {saving ? <RefreshCw size={18} className="spin" /> : <Save size={18} />} Save Admission Rules
                     </button>
                 </div>
             )}
@@ -637,70 +649,84 @@ const WebsiteSettings: React.FC = () => {
             {/* ═══ EMAIL TAB ═══ */}
             {activeTab === 'email' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-                    <div className="card" style={{ padding: 28 }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 20, color: 'var(--text-primary)' }}>
-                            <Mail size={18} style={{ display: 'inline', marginRight: 8, verticalAlign: 'middle' }} />
-                            Email Configuration
-                        </h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 24 }}>
-                            Configure the SMTP settings to use a custom email account when sending admission tracking IDs and other notifications to students.
-                        </p>
-                        
-                        <div style={{ marginBottom: 24 }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-                                <input type="checkbox" checked={emailConfig.use_custom} 
-                                    onChange={e => setEmailConfig(p => ({ ...p, use_custom: e.target.checked }))} 
-                                    style={{ width: 20, height: 20 }}
-                                />
-                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Use Custom SMTP Settings</span>
-                            </label>
+                    <div className="card" style={{ padding: 32 }}>
+                        <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(16,185,129,0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Mail size={28} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Mail Server Settings</h3>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-elevated)', padding: '8px 16px', borderRadius: 12, border: '1px solid var(--bg-border)' }}>
+                                        <span style={{ fontSize: '0.8rem', fontWeight: 700, color: emailConfig.use_custom ? 'var(--accent)' : 'var(--text-muted)' }}>
+                                            {emailConfig.use_custom ? 'CUSTOM SMTP ACTIVE' : 'USING DEFAULT SERVER'}
+                                        </span>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={emailConfig.use_custom} 
+                                                onChange={e => setEmailConfig(p => ({ ...p, use_custom: e.target.checked }))} 
+                                            />
+                                            <span className="slider round"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>
+                                    Configure how your school sends automated emails. We recommend using your official school SMTP for better deliverability.
+                                </p>
+                            </div>
                         </div>
 
-                        {emailConfig.use_custom && (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 20 }}>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>From Email</label>
-                                    <input className="form-input" value={emailConfig.from_email} onChange={e => setEmailConfig(p => ({ ...p, from_email: e.target.value }))} placeholder="no-reply@yourschool.com" />
+                        {emailConfig.use_custom ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                                    <div className="form-group-fancy">
+                                        <label>Sender Identity</label>
+                                        <div style={{ display: 'grid', gap: 16 }}>
+                                            <input className="form-input" value={emailConfig.from_name} onChange={e => setEmailConfig(p => ({ ...p, from_name: e.target.value }))} placeholder="Principal - Edducare School" />
+                                            <input className="form-input" value={emailConfig.from_email} onChange={e => setEmailConfig(p => ({ ...p, from_email: e.target.value }))} placeholder="admissions@school.com" />
+                                        </div>
+                                    </div>
+                                    <div className="form-group-fancy">
+                                        <label>Server Details</label>
+                                        <div style={{ display: 'grid', gap: 16 }}>
+                                            <input className="form-input" value={emailConfig.smtp_host} onChange={e => setEmailConfig(p => ({ ...p, smtp_host: e.target.value }))} placeholder="smtp.gmail.com" />
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                                                <input type="number" className="form-input" value={emailConfig.smtp_port} onChange={e => setEmailConfig(p => ({ ...p, smtp_port: parseInt(e.target.value) || 587 }))} placeholder="587" />
+                                                <select className="form-input" value={emailConfig.smtp_crypto} onChange={e => setEmailConfig(p => ({ ...p, smtp_crypto: e.target.value }))}>
+                                                    <option value="tls">TLS</option>
+                                                    <option value="ssl">SSL</option>
+                                                    <option value="none">None</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="form-group-fancy">
+                                        <label>Authentication</label>
+                                        <div style={{ display: 'grid', gap: 16 }}>
+                                            <input className="form-input" value={emailConfig.smtp_user} onChange={e => setEmailConfig(p => ({ ...p, smtp_user: e.target.value }))} placeholder="SMTP Username" />
+                                            <input type="password" className="form-input" value={emailConfig.smtp_pass} onChange={e => setEmailConfig(p => ({ ...p, smtp_pass: e.target.value }))} placeholder="••••••••••••" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>From Name</label>
-                                    <input className="form-input" value={emailConfig.from_name} onChange={e => setEmailConfig(p => ({ ...p, from_name: e.target.value }))} placeholder="Your School Name" />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>SMTP Host</label>
-                                    <input className="form-input" value={emailConfig.smtp_host} onChange={e => setEmailConfig(p => ({ ...p, smtp_host: e.target.value }))} placeholder="smtp.gmail.com" />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>SMTP Port</label>
-                                    <input type="number" className="form-input" value={emailConfig.smtp_port} onChange={e => setEmailConfig(p => ({ ...p, smtp_port: parseInt(e.target.value) || 587 }))} placeholder="587" />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Encryption/Crypto</label>
-                                    <select className="form-input" value={emailConfig.smtp_crypto} onChange={e => setEmailConfig(p => ({ ...p, smtp_crypto: e.target.value }))}>
-                                        <option value="tls">TLS</option>
-                                        <option value="ssl">SSL</option>
-                                        <option value="null">None</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>SMTP Username</label>
-                                    <input className="form-input" value={emailConfig.smtp_user} onChange={e => setEmailConfig(p => ({ ...p, smtp_user: e.target.value }))} placeholder="Email User" />
-                                </div>
-                                <div>
-                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>SMTP Password (App Password)</label>
-                                    <input type="password" className="form-input" value={emailConfig.smtp_pass} onChange={e => setEmailConfig(p => ({ ...p, smtp_pass: e.target.value }))} placeholder="••••••••" />
+                                <div style={{ padding: '20px 24px', background: 'rgba(59,130,246,0.05)', borderRadius: 16, border: '1px solid rgba(59,130,246,0.1)', display: 'flex', gap: 16, alignItems: 'center' }}>
+                                    <div style={{ color: 'var(--accent)' }}><Monitor size={20} /></div>
+                                    <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
+                                        <strong>Tip:</strong> If using Gmail, make sure to use an "App Password" rather than your regular account password.
+                                    </p>
                                 </div>
                             </div>
-                        )}
-                        {!emailConfig.use_custom && (
-                            <div style={{ padding: 24, background: 'var(--bg-elevated)', borderRadius: 12, border: '1px solid var(--bg-border)', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                                The platform will use default Edducare email servers to send notifications.
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '60px 40px', background: 'var(--bg-elevated)', borderRadius: 24, border: '2px dashed var(--bg-border)' }}>
+                                <Globe size={48} style={{ color: 'var(--text-muted)', opacity: 0.3, marginBottom: 16 }} />
+                                <h4 style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>Platform Default Active</h4>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0, maxWidth: 400, marginLeft: 'auto', marginRight: 'auto' }}>
+                                    Emails are currently sent via Edducare's verified infrastructure. Switch on the custom SMTP toggle to use your own domain.
+                                </p>
                             </div>
                         )}
                     </div>
                     
-                    <button onClick={handleSaveEmailConfig} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8, padding: '14px 32px' }}>
-                        {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Save Email Settings
+                    <button onClick={handleSaveEmailConfig} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 10, padding: '16px 40px', borderRadius: 14 }}>
+                        {saving ? <RefreshCw size={18} className="spin" /> : <Save size={18} />} Save Mail Server
                     </button>
                 </div>
             )}

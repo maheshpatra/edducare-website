@@ -179,25 +179,6 @@ export default function Layout({ children }) {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full school-gradient opacity-[0.03] filter blur-3xl"></div>
         
         <div className="max-w-7xl mx-auto px-4 pt-20 pb-8 relative z-10">
-          {/* Footer Top CTA */}
-          <div className="relative -mt-32 mb-20">
-            <div className="school-gradient rounded-[2.5rem] p-8 md:p-14 flex flex-col lg:flex-row items-center justify-between gap-10 shadow-2xl relative overflow-hidden">
-              {/* Decorative background elements */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-              <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full -ml-10 -mb-10 blur-2xl"></div>
-              
-              <div className="relative z-10 text-center lg:text-left max-w-2xl">
-                <h3 className="text-3xl md:text-4xl font-black text-white mb-4 leading-tight">Ready to begin the journey?</h3>
-                <p className="text-white/80 text-lg font-medium">Join our thriving community of learners and leaders today. Secure your child's future with us.</p>
-              </div>
-              <div className="relative z-10 flex-shrink-0">
-                <Link to="/admission" className="bg-white text-primary hover:bg-slate-50 px-10 py-5 rounded-2xl font-black text-lg transition-all shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 flex items-center group">
-                  Start Application <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
-              </div>
-            </div>
-          </div>
-
           {/* Footer Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
             <div>
