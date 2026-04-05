@@ -22,6 +22,7 @@ import Analytics from './pages/Analytics';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import WebsiteSettings from './pages/WebsiteSettings';
+import Admissions from './pages/Admissions';
 import AcademicSessions from './pages/AcademicSessions';
 
 import SuperAdminDashboard from './pages/superadmin/Dashboard';
@@ -47,6 +48,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/sessions': { title: 'Academic Sessions', subtitle: 'Manage academic years and active sessions.' },
   '/settings': { title: 'Settings', subtitle: 'Configure school and system preferences.' },
   '/website': { title: 'Website Settings', subtitle: 'Customize your school website appearance and content.' },
+  '/admissions': { title: 'Admissions', subtitle: 'Review and manage student admission requests.' },
   '/superadmin/schools': { title: 'Managed Schools', subtitle: 'Oversee and control all schools on the platform.' },
   '/superadmin/packages': { title: 'Pricing Models', subtitle: 'Manage subscription plans and pricing.' },
 };
@@ -114,6 +116,7 @@ const AppShell: React.FC = () => {
             <Route path="/sessions" element={<AcademicSessions />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/website" element={<WebsiteSettings />} />
+            <Route path="/admissions" element={<Admissions />} />
 
             {/* Super Admin Routes */}
             <Route path="/superadmin/schools" element={<SuperAdminSchools />} />

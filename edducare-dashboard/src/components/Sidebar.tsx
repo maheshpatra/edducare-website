@@ -1,6 +1,6 @@
 import {
     LayoutDashboard, GraduationCap, ChevronLeft, LogOut,
-    CalendarDays, Package, School, Clock, ClipboardList, Award, Calendar, DollarSign, Library, Bell, Settings, FileText, TrendingUp, Users, Globe
+    CalendarDays, Package, School, Clock, ClipboardList, Award, Calendar, DollarSign, Library, Bell, Settings, FileText, TrendingUp, Users, Globe, UserCheck
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -31,6 +31,7 @@ const NAV_GROUPS: NavGroup[] = [
         items: [
             { to: '/students', icon: GraduationCap, label: 'Students' },
             { to: '/teachers', icon: Users, label: 'Teachers' },
+            { to: '/admissions', icon: UserCheck, label: 'Admissions' },
         ],
     },
     {

@@ -63,22 +63,72 @@ try {
     $email_config = $email_stmt->fetch(PDO::FETCH_ASSOC);
 
     $mail_sent = false;
+    
+    // HTML Email Template
+    $site_url = "https://edducare.finafid.org";
+    $html_message = "
+    <html>
+    <head>
+      <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
+        .header { background: #3b82f6; padding: 30px 20px; text-align: center; color: #ffffff; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+        .content { padding: 40px 30px; line-height: 1.6; }
+        .content p { margin-bottom: 20px; font-size: 16px; }
+        .tracking-box { background: #f8fafc; border: 2px dashed #cbd5e1; padding: 20px; text-align: center; border-radius: 8px; margin: 30px 0; }
+        .tracking-box .label { text-transform: uppercase; font-size: 12px; color: #64748b; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; }
+        .tracking-box .id { font-size: 28px; font-weight: 800; color: #0f172a; letter-spacing: 2px; }
+        .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #f1f5f9; }
+        .btn { display: inline-block; padding: 12px 24px; background: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px; }
+      </style>
+    </head>
+    <body>
+      <div class='container'>
+        <div class='header'>
+          <h1>Admission Request Received</h1>
+        </div>
+        <div class='content'>
+          <p>Dear <strong>$student_name</strong>,</p>
+          <p>Thank you for submitting your admission request. We have successfully received your details and our administration team will review your application shortly.</p>
+          
+          <div class='tracking-box'>
+            <div class='label'>Your Tracking ID</div>
+            <div class='id'>$tracking_id</div>
+          </div>
+          
+          <p>Please keep this tracking ID secure. You can use it to track the status of your admission process. At this stage, no student portal account has been created for you yet. We will contact you regarding the next steps.</p>
+          
+          <div style='text-align: center; margin-top: 30px;'>
+            <a href='$site_url' class='btn'>Visit Our Website</a>
+          </div>
+        </div>
+        <div class='footer'>
+          &copy; " . date('Y') . " Edducare. All rights reserved.<br>
+          This is an automated message, please do not reply directly to this email.
+        </div>
+      </div>
+    </body>
+    </html>
+    ";
+
+    $subject = "Registration Successful - Tracking ID: " . $tracking_id;
 
     if ($email_config && $email_config['use_custom']) {
-        // Pseudo code to send email
         // Setup PHPMailer or default mail() using the SMTP configurations
-        // However user just wanted it properly planned.
-        $subject = "Registration Successful";
-        $message = "Your admission registration is successful. Your tracking ID is: " . $tracking_id . ". You can use this ID to track your admission status. No username or password has been created yet.";
-        $headers = "From: " . $email_config['from_name'] . " <" . $email_config['from_email'] . ">";
-        // mail($email, $subject, $message, $headers);
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: " . $email_config['from_name'] . " <" . $email_config['from_email'] . ">\r\n";
+        
+        // mail($email, $subject, $html_message, $headers);
         $mail_sent = true;
     } else {
         // Use default sending mechanism
-        $subject = "Registration Successful";
-        $message = "Your admission registration is successful. Your tracking ID is: " . $tracking_id . ". You can use this ID to track your admission status. No username or password has been created yet.";
-        $headers = "From: Edducare Default <no-reply@edducare.finafid.org>";
-        // mail($email, $subject, $message, $headers);
+        $headers  = "MIME-Version: 1.0\r\n";
+        $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+        $headers .= "From: Edducare Admissions <no-reply@edducare.finafid.org>\r\n";
+        
+        // mail($email, $subject, $html_message, $headers);
         $mail_sent = true;
     }
 

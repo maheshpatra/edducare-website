@@ -472,6 +472,17 @@ export const websiteService = {
     updateEmailConfig: (data: any) => api.post('/website/email_config', data),
 };
 
+// ─── Admissions ───────────────────────────────────────────────────────────────
+export const admissionsService = {
+    /** GET /admissions/list – list all admission requests */
+    list: (params?: { page?: number; limit?: number; search?: string; status?: string }) =>
+        api.get('/admissions/list', { params }),
+
+    /** GET /admissions/get_by_tracking – find one by tracking ID */
+    getByTracking: (tracking_id: string) =>
+        api.get('/admissions/get_by_tracking', { params: { tracking_id } }),
+};
+
 // ─── Reports ───────────────────────────────────────────────────────────────────
 export const reportService = {
     /** GET /reports/generate – triggers download or returns report content */
