@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { useSchool } from '../context/SchoolContext';
+import { motion } from 'framer-motion';
+import { Phone, Mail, MapPin, Clock, Send, CheckCircle } from 'lucide-react';
 import axios from 'axios';
 
 export default function Contact() {
