@@ -10,27 +10,48 @@ export default function Result() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const fetchResult = (e) => {
+  const fetchResult = async (e) => {
     e.preventDefault();
+    if (!rollNumber) {
+      setError('Please enter a roll number.');
+      return;
+    }
     setLoading(true); setResult(null); setError(null);
-    setTimeout(() => {
-      if (rollNumber === '12345') {
-        setResult({
-          student_name: 'Alex Johnson', class: 'Grade 10-A', academic_year: '2024-2025',
-          total_marks: 485, max_marks: 500, percentage: '97%', grade: 'A+', status: 'Pass',
-          subjects: [
-            { name: 'Mathematics', marks: 98, max: 100 },
-            { name: 'Science', marks: 95, max: 100 },
-            { name: 'English', marks: 97, max: 100 },
-            { name: 'Social Studies', marks: 96, max: 100 },
-            { name: 'Computer Science', marks: 99, max: 100 },
-          ]
-        });
-      } else {
-        setError('No result found for the provided Roll Number. Please check and try again.');
-      }
+    if (!activeSchool) {
+      setError('School information not loaded. Please refresh the page.');
       setLoading(false);
-    }, 1500);
+      return;
+    }
+    try {
+      const response = await fetch(`https://edducare.finafid.org/api/public/result?roll_number=${rollNumber}&school_id=${activeSchool.id}`);
+      const data = await response.json();
+      if (data.success && data.current_result) {
+        setResult({
+          student_name: data.student_info.student_name,
+          class: data.student_info.class,
+          academic_year: data.student_info.academic_year,
+          total_marks: data.current_result.total_marks,
+          max_marks: data.current_result.max_marks,
+          percentage: data.current_result.percentage,
+          grade: data.current_result.grade,
+          status: data.current_result.status,
+          subjects: data.current_result.subjects.map(s => ({
+            name: s.name,
+            marks: s.marks,
+            max: s.max
+          }))
+        });
+      } else if (data.success) {
+        setError(data.message || 'No result records found for this student.');
+      } else {
+        setError(data.error || 'Failed to fetch result. Please try again.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError('An error occurred while fetching the result. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,7 +71,7 @@ export default function Result() {
             <input 
               type="text" 
               className="w-full pl-14 pr-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white focus:outline-none transition-all font-bold"
-              placeholder="Enter Roll Number (Try 12345)"
+              placeholder="Enter Roll Number"
               value={rollNumber}
               onChange={(e) => setRollNumber(e.target.value)}
             />

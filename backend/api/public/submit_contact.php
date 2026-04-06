@@ -8,7 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once '../../includes/mailer.php';
+
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 $database = new Database();
 $db = $database->getConnection();
@@ -49,6 +55,44 @@ try {
     ]);
 
     if ($success) {
+        // Find email config for notifications
+        $email_query = "SELECT * FROM email_configs WHERE school_id = :school_id LIMIT 1";
+        $email_stmt = $db->prepare($email_query);
+        $email_stmt->execute([':school_id' => $school_id]);
+        $email_config = $email_stmt->fetch(PDO::FETCH_ASSOC);
+
+        $final_config = [
+            'from_name' => FROM_NAME,
+            'from_email' => FROM_EMAIL,
+            'smtp_host' => SMTP_HOST,
+            'smtp_port' => SMTP_PORT,
+            'smtp_user' => SMTP_USERNAME,
+            'smtp_pass' => SMTP_PASSWORD
+        ];
+
+        if ($email_config && $email_config['use_custom']) {
+            foreach(['from_name', 'from_email', 'smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass'] as $key) {
+                if(!empty($email_config[$key])) $final_config[$key] = $email_config[$key];
+            }
+        }
+
+        // Notification Message
+        $notif_subject = "New Website Inquiry: " . $subject;
+        $notif_body = "<h1>New Website Message</h1>" .
+                      "<p><strong>From:</strong> $full_name ($email)</p>" .
+                      "<p><strong>Subject:</strong> $subject</p>" .
+                      "<p><strong>Message:</strong></p><p>$message</p>";
+
+        // Send to School Email
+        CustomMailer::send($final_config['from_email'], $notif_subject, $notif_body, [
+            'host' => $final_config['smtp_host'],
+            'port' => $final_config['smtp_port'],
+            'user' => $final_config['smtp_user'],
+            'pass' => $final_config['smtp_pass'],
+            'from_name' => "Edducare Portal",
+            'from_email' => $final_config['from_email']
+        ]);
+
         echo json_encode(['success' => true, 'message' => 'Message sent successfully']);
     } else {
         throw new Exception("Database execution failed");

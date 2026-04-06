@@ -8,7 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+require_once '../../config/config.php';
 require_once '../../config/database.php';
+require_once '../../includes/mailer.php';
+
+// Enable error reporting for debugging
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
 
 $database = new Database();
 $db = $database->getConnection();
@@ -145,9 +151,14 @@ try {
     $headers .= "Content-type: text/html; charset=UTF-8\r\n";
     $headers .= "From: " . $final_config['from_name'] . " <" . $final_config['from_email'] . ">\r\n";
     
-    // mail($email, $subject, $html_message, $headers);
-    // Note: In production, use PHPMailer with $final_config for reliable delivery
-    $mail_sent = true;
+    $mail_sent = CustomMailer::send($email, $subject, $html_message, [
+        'host' => $final_config['smtp_host'],
+        'port' => $final_config['smtp_port'],
+        'user' => $final_config['smtp_user'],
+        'pass' => $final_config['smtp_pass'],
+        'from_name' => $final_config['from_name'],
+        'from_email' => $final_config['from_email']
+    ]);
 
     if ($mail_sent) {
         $update_mail = "UPDATE admission_requests SET email_sent = 1 WHERE tracking_id = :tracking_id";
