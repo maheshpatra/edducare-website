@@ -3,7 +3,7 @@ import {
     Plus, Search, DollarSign, CheckCircle, AlertCircle, Clock,
     MoreVertical, User, Briefcase, LayoutGrid, Users
 } from 'lucide-react';
-import { feeService, studentService } from '../api/services';
+import { feeService, studentService, websiteService } from '../api/services';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 import '../timetable.css';
@@ -52,6 +52,7 @@ const Fees: React.FC = () => {
         remarks: '',
     });
     const [saving, setSaving] = useState(false);
+    const [schoolQR, setSchoolQR] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -84,6 +85,11 @@ const Fees: React.FC = () => {
 
     useEffect(() => {
         studentService.list({ limit: 1000 }).then(r => setStudents(r.data?.data || []));
+        websiteService.getAdmissionConfig().then(r => {
+            if (r.data?.success && r.data.data?.qr_code) {
+                setSchoolQR(r.data.data.qr_code);
+            }
+        });
     }, []);
 
     useEffect(() => {
@@ -362,16 +368,28 @@ const Fees: React.FC = () => {
                             <label style={{ fontSize: '12px', fontWeight: '800', marginBottom: '8px' }}>Payment Mode</label>
                             <select className="input" value={payForm.payment_method} onChange={e => pf('payment_method', e.target.value)}>
                                 <option value="cash">Cash</option>
-                                <option value="upi">UPI / QR</option>
+                                <option value="upi">UPI / QR Code</option>
                                 <option value="bank_transfer">Bank Transfer</option>
                                 <option value="cheque">Cheque</option>
                             </select>
                         </div>
                         <div className="form-group">
-                            <label style={{ fontSize: '12px', fontWeight: '800', marginBottom: '8px' }}>Reference ID</label>
-                            <input className="input" value={payForm.transaction_id} onChange={e => pf('transaction_id', e.target.value)} placeholder="Optional" />
+                            <label style={{ fontSize: '12px', fontWeight: '800', marginBottom: '8px' }}>UTR / Transaction ID</label>
+                            <input className="input" value={payForm.transaction_id} onChange={e => pf('transaction_id', e.target.value)} placeholder="Required for UPI/Online" />
                         </div>
                     </div>
+
+                    {payForm.payment_method === 'upi' && schoolQR && (
+                        <div style={{ textAlign: 'center', padding: '20px', background: 'white', borderRadius: '16px', border: '2px dashed var(--bg-border)' }}>
+                            <p style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase' }}>Scan to Pay</p>
+                            <img 
+                                src={`https://edducare.finafid.org/uploads/${schoolQR}`} 
+                                alt="Payment QR" 
+                                style={{ width: '160px', height: '160px', objectFit: 'contain' }} 
+                            />
+                            <p style={{ fontSize: '10px', fontWeight: '600', color: '#10b981', marginTop: '12px' }}>Enter the UTR number from your app above after scanning</p>
+                        </div>
+                    )}
                 </div>
             </Modal>
         </div>

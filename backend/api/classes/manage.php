@@ -102,7 +102,7 @@ function handleGetClasses($db, $user) {
 function handleCreateClass($db, $user) {
     $input = json_decode(file_get_contents('php://input'), true);
     
-    $required = ['name', 'grade_level', 'academic_year_id'];
+    $required = ['name', 'grade_level'];
     foreach ($required as $field) {
         if (!isset($input[$field])) {
             http_response_code(400);
@@ -116,14 +116,13 @@ function handleCreateClass($db, $user) {
     $db->beginTransaction();
     
     try {
-        $query = "INSERT INTO classes (school_id, name, grade_level, academic_year_id, class_teacher_id, room_number, capacity) 
-                  VALUES (:school_id, :name, :grade_level, :academic_year_id, :class_teacher_id, :room_number, :capacity)";
+        $query = "INSERT INTO classes (school_id, name, grade_level, class_teacher_id, room_number, capacity) 
+                  VALUES (:school_id, :name, :grade_level, :class_teacher_id, :room_number, :capacity)";
         
         $stmt = $db->prepare($query);
         $stmt->bindValue(':school_id', $schoolId);
         $stmt->bindValue(':name', $input['name']);
         $stmt->bindValue(':grade_level', $input['grade_level']);
-        $stmt->bindValue(':academic_year_id', $input['academic_year_id']);
         $stmt->bindValue(':class_teacher_id', $input['class_teacher_id'] ?? null);
         $stmt->bindValue(':room_number', $input['room_number'] ?? null);
         $stmt->bindValue(':capacity', $input['capacity'] ?? 30);

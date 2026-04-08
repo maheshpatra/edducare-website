@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Plus, Award, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Award, Upload } from 'lucide-react';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 
 import { examService, classService } from '../api/services';
 
 const Exams: React.FC = () => {
+    const navigate = useNavigate();
     const [exams, setExams] = useState<any[]>([]);
     const [classes, setClasses] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ const Exams: React.FC = () => {
         }
         setSaving(true);
         try {
-            await examService.create(form);
+            await examService.create(form as any);
             toast.success('Exam scheduled successfully');
             setShowModal(false);
             setForm({ exam_name: '', exam_type: 'unit_test', class_id: '', subject: '', exam_date: '', total_marks: '100', passing_marks: '33' });
@@ -91,7 +93,14 @@ const Exams: React.FC = () => {
 
             <div className="toolbar">
                 <span style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{exams.length} exams found</span>
-                <button className="btn btn-primary" onClick={() => setShowModal(true)}><Plus size={16} />Schedule Exam</button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn btn-secondary" onClick={() => navigate('/exam-results')}>
+                        <Upload size={16} /> Upload Results
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                        <Plus size={16} /> Schedule Exam
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -102,7 +111,7 @@ const Exams: React.FC = () => {
                         const status = getStatus(e.exam_date);
                         const typeColor = '#6366f1';
                         return (
-                            <div key={e.id} className="card" style={{ padding: 20, cursor: 'pointer', transition: 'all 0.2s' }}>
+                            <div key={e.id} className="card" style={{ padding: 20, transition: 'all 0.2s' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                                     <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-md)', background: `${typeColor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                         <Award size={22} style={{ color: typeColor }} />
@@ -120,7 +129,14 @@ const Exams: React.FC = () => {
                                             <span>💯 {e.total_marks} marks</span>
                                         </div>
                                     </div>
-                                    <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
+                                    <button
+                                        className="btn btn-secondary"
+                                        style={{ padding: '6px 14px', fontSize: '0.75rem', fontWeight: 700 }}
+                                        onClick={() => navigate(`/exam-results?exam_id=${e.id}`)}
+                                        title="Upload Results"
+                                    >
+                                        <Upload size={14} /> Results
+                                    </button>
                                 </div>
                             </div>
                         );
@@ -150,6 +166,7 @@ const Exams: React.FC = () => {
                     <div className="form-group"><label>Exam Date *</label><input className="input" type="date" value={form.exam_date} onChange={e => f('exam_date', e.target.value)} /></div>
                     <div className="form-group"><label>Total Marks *</label><input className="input" type="number" value={form.total_marks} onChange={e => f('total_marks', e.target.value)} /></div>
                 </div>
+                <div className="form-group"><label>Passing Marks</label><input className="input" type="number" value={form.passing_marks} onChange={e => f('passing_marks', e.target.value)} placeholder="e.g. 33" /></div>
             </Modal>
         </div>
     );

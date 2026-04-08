@@ -3,8 +3,8 @@ import {
     AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { Users, BookOpen, DollarSign, Calendar, TrendingUp, TrendingDown, Activity, Clock } from 'lucide-react';
-import { analyticsService } from '../api/services';
+import { Users, BookOpen, DollarSign, Calendar, TrendingUp, TrendingDown, Activity, Clock, Cake, UserCheck } from 'lucide-react';
+import { analyticsService, hrService } from '../api/services';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Fallback data shown while API loads ─────────────────────────────────────
@@ -40,6 +40,8 @@ const Dashboard: React.FC = () => {
     const [stats, setStats] = useState<DashboardStats>(FALLBACK_STATS as any);
     const [loading, setLoading] = useState(true);
     const [lastUpdated, setLastUpdated] = useState('');
+    const [birthdays, setBirthdays] = useState<any[]>([]);
+    const [staffOnLeave, setStaffOnLeave] = useState<any[]>([]);
 
     useEffect(() => {
         (async () => {
@@ -76,6 +78,14 @@ const Dashboard: React.FC = () => {
                 setLoading(false);
             }
         })();
+
+        // Load HR widgets (birthdays + leaves) separately so they don't block dashboard
+        hrService.birthdays({ days: 14 })
+            .then(r => setBirthdays(r.data?.data?.birthdays ?? []))
+            .catch(() => {});
+        hrService.leavesToday()
+            .then(r => setStaffOnLeave(r.data?.data?.staff_on_leave ?? []))
+            .catch(() => {});
     }, []);
 
     // Build pie chart data - Use real data or empty
@@ -267,6 +277,74 @@ const Dashboard: React.FC = () => {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Staff on Leave + Upcoming Birthdays */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 20 }}>
+                {/* Staff on Leave Today */}
+                <div className="card">
+                    <div style={{ background: '#f59e0b', padding: '14px 20px', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UserCheck size={18} color="#000" />
+                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#000' }}>Staff on Leave Today</span>
+                    </div>
+                    <div className="card-body">
+                        {staffOnLeave.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 24, color: 'var(--success)' }}>
+                                <UserCheck size={28} style={{ margin: '0 auto 6px', display: 'block', opacity: 0.7 }} />
+                                <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>All staff are present.</div>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                {staffOnLeave.map((s: any, i: number) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: i < staffOnLeave.length - 1 ? '1px solid var(--bg-border)' : 'none' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <div className="avatar" style={{ width: 32, height: 32, fontSize: '0.7rem' }}>{s.staff_name?.[0]}</div>
+                                            <div>
+                                                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{s.staff_name}</div>
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{s.leave_type_name}</div>
+                                            </div>
+                                        </div>
+                                        <span className="badge badge-warning">{s.days}d</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Upcoming Birthdays */}
+                <div className="card">
+                    <div style={{ background: '#10b981', padding: '14px 20px', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Cake size={18} color="#000" />
+                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#000' }}>Upcoming Birthdays</span>
+                    </div>
+                    <div className="card-body">
+                        {birthdays.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>
+                                <Cake size={28} style={{ margin: '0 auto 6px', display: 'block', opacity: 0.5 }} />
+                                <div style={{ fontSize: '0.85rem' }}>No upcoming birthdays</div>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                {birthdays.slice(0, 6).map((b: any, i: number) => (
+                                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: i < Math.min(birthdays.length, 6) - 1 ? '1px solid var(--bg-border)' : 'none' }}>
+                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                                            {b.full_name}
+                                            {b.person_type === 'student' && b.class_name ? (
+                                                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>
+                                                    {' '}- {b.class_name}{b.section_name ? `(${b.section_name})` : ''}
+                                                </span>
+                                            ) : (
+                                                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}> - Staff</span>
+                                            )}
+                                        </div>
+                                        <span className="badge badge-success">{b.birthday_display}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

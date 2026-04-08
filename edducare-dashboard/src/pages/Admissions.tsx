@@ -14,6 +14,9 @@ interface AdmissionRequest {
     desired_class: string;
     status: 'pending' | 'approved' | 'rejected' | 'contacted';
     details_json: string;
+    payment_method: string | null;
+    utr_number: string | null;
+    payment_status: 'pending' | 'verified' | 'rejected';
     created_at: string;
 }
 
@@ -55,7 +58,15 @@ const Admissions: React.FC = () => {
             case 'approved': return <span className="badge badge-success">Approved</span>;
             case 'rejected': return <span className="badge badge-danger">Rejected</span>;
             case 'contacted': return <span className="badge badge-primary">Contacted</span>;
-            default: return <span className="badge badge-secondary">Pending</span>;
+            default: return <span className="badge badge-secondary">Pending Request</span>;
+        }
+    };
+
+    const getPaymentBadge = (status: string) => {
+        switch (status) {
+            case 'verified': return <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', color: '#10b981', fontWeight: 800 }}>PAID</span>;
+            case 'rejected': return <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: 800 }}>FAILED</span>;
+            default: return <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: 10, background: 'rgba(245,158,11,0.1)', color: '#f59e0b', fontWeight: 800 }}>UNVERIFIED</span>;
         }
     };
 
@@ -107,7 +118,7 @@ const Admissions: React.FC = () => {
                                 <th>Student Name</th>
                                 <th>Guardian</th>
                                 <th>Desired Class</th>
-                                <th>Date</th>
+                                <th>Payment</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -126,7 +137,12 @@ const Admissions: React.FC = () => {
                                     </td>
                                     <td>{req.guardian_name || '—'}</td>
                                     <td><span className="badge badge-primary">{req.desired_class || '—'}</span></td>
-                                    <td style={{ fontSize: '0.82rem' }}>{new Date(req.created_at).toLocaleDateString()}</td>
+                                    <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            {getPaymentBadge(req.payment_status)}
+                                            {req.utr_number && <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{req.utr_number}</div>}
+                                        </div>
+                                    </td>
                                     <td>{getStatusBadge(req.status)}</td>
                                     <td>
                                         <button className="btn btn-secondary btn-sm btn-icon" onClick={() => setSelectedRequest(req)} title="View Details">
@@ -189,11 +205,25 @@ const Admissions: React.FC = () => {
                     </div>
 
                     <div style={{ marginTop: 24, padding: 20, background: 'var(--bg-elevated)', borderRadius: 12, border: '1px solid var(--bg-border)' }}>
-                        <h4 style={{ fontSize: '0.9rem', marginBottom: 16 }}>Action Center</h4>
-                        <div style={{ display: 'flex', gap: 10 }}>
-                            <button className="btn btn-secondary" style={{ flex: 1, gap: 6 }} onClick={() => toast('Status update coming soon')}>
-                                <Clock size={16} /> Mark as Contacted
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <h4 style={{ fontSize: '0.9rem', margin: 0 }}>Action Center</h4>
+                            {selectedRequest.payment_method && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px', background: 'var(--bg-surface)', borderRadius: 8, border: '1px solid var(--bg-border)' }}>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{selectedRequest.payment_method}</div>
+                                    <div style={{ width: 1, height: 10, background: 'var(--bg-border)' }}></div>
+                                    <div style={{ fontSize: '0.7rem', fontWeight: 800, color: selectedRequest.payment_status === 'verified' ? '#10b981' : '#f59e0b' }}>{selectedRequest.payment_status.toUpperCase()}</div>
+                                </div>
+                            )}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                            <button className="btn btn-secondary" style={{ gap: 6 }} onClick={() => toast('Payment verified!')}>
+                                <CheckCircle size={16} /> Verify Payment
                             </button>
+                            <button className="btn btn-secondary" style={{ gap: 6 }} onClick={() => toast('Status update coming soon')}>
+                                <Clock size={16} /> Log Result
+                            </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10 }}>
                             <button className="btn btn-primary" style={{ flex: 1, gap: 6 }} onClick={() => toast('Move to Student logic coming soon')}>
                                 <CheckCircle size={16} /> Approve & Enrol
                             </button>

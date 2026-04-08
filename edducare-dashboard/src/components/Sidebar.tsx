@@ -1,6 +1,6 @@
 import {
     LayoutDashboard, GraduationCap, ChevronLeft, LogOut,
-    CalendarDays, Package, School, Clock, ClipboardList, Award, Calendar, DollarSign, Library, Bell, Settings, FileText, TrendingUp, Users, Globe, UserCheck, Mail
+    CalendarDays, Package, School, Clock, ClipboardList, Award, Calendar, DollarSign, Library, Bell, Settings, FileText, TrendingUp, Users, Globe, UserCheck, Mail, Upload, ArrowUpCircle, Briefcase, BookOpen
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -32,16 +32,25 @@ const NAV_GROUPS: NavGroup[] = [
             { to: '/students', icon: GraduationCap, label: 'Students' },
             { to: '/teachers', icon: Users, label: 'Teachers' },
             { to: '/admissions', icon: UserCheck, label: 'Admissions' },
+            { to: '/promote-students', icon: ArrowUpCircle, label: 'Promote Students' },
             { to: '/messages', icon: Mail, label: 'Messages' },
+        ],
+    },
+    {
+        label: 'Human Resource',
+        items: [
+            { to: '/hr', icon: Briefcase, label: 'HR Management' },
         ],
     },
     {
         label: 'Academics',
         items: [
             { to: '/classes', icon: School, label: 'Classes' },
+            { to: '/subjects', icon: BookOpen, label: 'Subjects' },
             { to: '/timetable', icon: Clock, label: 'Timetable' },
             { to: '/assignments', icon: ClipboardList, label: 'Assignments' },
             { to: '/exams', icon: Award, label: 'Exams' },
+            { to: '/exam-results', icon: Upload, label: 'Upload Results' },
         ],
     },
     {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Plus, ChevronDown, ChevronRight, Users, BookOpen } from 'lucide-react';
-import { classService, academicService } from '../api/services';
+import { classService } from '../api/services';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 
@@ -19,11 +19,10 @@ interface ClassRecord {
     class_teacher_id?: number;
 }
 
-const EMPTY_FORM = { name: '', grade_level: '', academic_year_id: '', description: '', capacity: '30', room_number: '' };
+const EMPTY_FORM = { name: '', grade_level: '', description: '', capacity: '30', room_number: '' };
 
 const Classes: React.FC = () => {
     const [classes, setClasses] = useState<ClassRecord[]>([]);
-    const [academicYears, setAcademicYears] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
@@ -44,11 +43,6 @@ const Classes: React.FC = () => {
     const totalStudents = classes.reduce((s, c) => s + Number(c.student_count ?? 0), 0);
     const totalSections = classes.reduce((s, c) => s + Number(c.section_count ?? 0), 0);
 
-    useEffect(() => {
-        academicService.list()
-            .then(r => setAcademicYears(r.data?.data ?? []))
-            .catch(() => { });
-    }, []);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -66,7 +60,7 @@ const Classes: React.FC = () => {
 
     const openCreate = () => { setForm({ ...EMPTY_FORM }); setEditing(null); setShowCreate(true); };
     const openEdit = (c: ClassRecord) => {
-        setForm({ name: c.name, grade_level: String(c.grade_level), academic_year_id: '', description: c.description ?? '', capacity: String(c.capacity ?? 30), room_number: c.room_number ?? '' });
+        setForm({ name: c.name, grade_level: String(c.grade_level), description: c.description ?? '', capacity: String(c.capacity ?? 30), room_number: c.room_number ?? '' });
         setEditing(c); setShowCreate(true);
     };
 
@@ -78,7 +72,7 @@ const Classes: React.FC = () => {
                 await classService.update({ id: editing.id, name: form.name, grade_level: form.grade_level, description: form.description, capacity: Number(form.capacity), room_number: form.room_number });
                 toast.success('Class updated');
             } else {
-                await classService.create({ name: form.name, grade_level: form.grade_level, academic_year_id: form.academic_year_id || undefined, description: form.description, sections: [{ name: 'A', capacity: Number(form.capacity) }] });
+                await classService.create({ name: form.name, grade_level: form.grade_level, description: form.description, capacity: Number(form.capacity), room_number: form.room_number, sections: [{ name: 'A', capacity: Number(form.capacity) }] });
                 toast.success('Class created');
             }
             setShowCreate(false); load();
@@ -224,9 +218,6 @@ const Classes: React.FC = () => {
                                         {c.description && (
                                             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{c.description}</span>
                                         )}
-                                        {c.academic_year_name && (
-                                            <span className="badge badge-primary">{c.academic_year_name}</span>
-                                        )}
                                     </div>
                                 )}
                             </div>
@@ -242,14 +233,7 @@ const Classes: React.FC = () => {
                     <div className="form-group"><label>Class Name *</label><input className="input" value={form.name} onChange={e => f('name', e.target.value)} placeholder="e.g. Class 10" /></div>
                     <div className="form-group"><label>Grade Level *</label><input className="input" type="number" min="1" max="12" value={form.grade_level} onChange={e => f('grade_level', e.target.value)} placeholder="10" /></div>
                 </div>
-                {!editing && (
-                    <div className="form-group"><label>Academic Year</label>
-                        <select value={form.academic_year_id} onChange={e => f('academic_year_id', e.target.value)}>
-                            <option value="">Select academic year</option>
-                            {academicYears.map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
-                        </select>
-                    </div>
-                )}
+
                 <div className="grid-2">
                     <div className="form-group"><label>Capacity</label><input className="input" type="number" min="1" value={form.capacity} onChange={e => f('capacity', e.target.value)} placeholder="30" /></div>
                     <div className="form-group"><label>Room Number</label><input className="input" value={form.room_number} onChange={e => f('room_number', e.target.value)} placeholder="101" /></div>

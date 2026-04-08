@@ -19,6 +19,12 @@ error_reporting(E_ALL);
 $database = new Database();
 $db = $database->getConnection();
 
+// Ensure uploads directory exists
+$upload_dir = '../../uploads/';
+if (!is_dir($upload_dir)) {
+    mkdir($upload_dir, 0777, true);
+}
+
 $data = json_decode(file_get_contents("php://input"), true);
 $school_id = isset($data['school_id']) ? (int)$data['school_id'] : null;
 
@@ -28,7 +34,26 @@ if (!$school_id) {
     exit;
 }
 
+// Force schema update
+$queries = [
+    "ALTER TABLE admission_requests ADD utr_number VARCHAR(100) NULL",
+    "ALTER TABLE admission_requests ADD payment_method VARCHAR(50) NULL",
+    "ALTER TABLE admission_requests ADD payment_status ENUM('pending', 'verified', 'rejected') DEFAULT 'pending'"
+];
+
+foreach ($queries as $q) {
+    try {
+        $db->exec($q);
+    } catch (Exception $e) {
+        // This will often fail with "Duplicate column name" if already present, which is fine
+        file_put_contents('../../uploads/debug_admission.log', date('Y-m-d H:i:s') . " - Migration Query: $q - Code: " . $e->getCode() . " - Result: " . $e->getMessage() . "\n", FILE_APPEND);
+    }
+}
+
 try {
+    // Debug logging
+    file_put_contents('../../uploads/debug_admission.log', date('Y-m-d H:i:s') . " - Request: " . json_encode($data) . "\n", FILE_APPEND);
+    
     $tracking_id = "ADM-" . strtoupper(uniqid());
     
     // Core fields
@@ -37,6 +62,8 @@ try {
     $guardian_name = $data['guardian_name'] ?? null;
     $phone = $data['phone'] ?? null;
     $desired_class = $data['desired_class'] ?? null;
+    $utr_number = $data['utr_number'] ?? null;
+    $payment_method = $data['payment_method'] ?? null;
     
     // Details JSON
     $details = [];
@@ -47,9 +74,11 @@ try {
     }
     
     $query = "INSERT INTO admission_requests 
-              (school_id, tracking_id, student_name, guardian_name, email, phone, desired_class, details_json) 
-              VALUES (:school_id, :tracking_id, :student_name, :guardian_name, :email, :phone, :desired_class, :details_json)";
+              (school_id, tracking_id, student_name, guardian_name, email, phone, desired_class, details_json, utr_number, payment_method, payment_status) 
+              VALUES (:school_id, :tracking_id, :student_name, :guardian_name, :email, :phone, :desired_class, :details_json, :utr_number, :payment_method, :payment_status)";
               
+    $payment_status = ($payment_method === 'razorpay' || $payment_method === 'payu') ? 'verified' : 'pending';
+
     $stmt = $db->prepare($query);
     $stmt->execute([
         ':school_id' => $school_id,
@@ -59,7 +88,10 @@ try {
         ':email' => $email,
         ':phone' => $phone,
         ':desired_class' => $desired_class,
-        ':details_json' => json_encode($details)
+        ':details_json' => json_encode($details),
+        ':utr_number' => $utr_number,
+        ':payment_method' => $payment_method,
+        ':payment_status' => $payment_status
     ]);
 
     // Check email config limit to 1
@@ -173,6 +205,7 @@ try {
     ]);
 
 } catch (Exception $e) {
+    file_put_contents('../../uploads/debug_admission.log', date('Y-m-d H:i:s') . " - ERROR: " . $e->getMessage() . "\n", FILE_APPEND);
     http_response_code(500);
     echo json_encode(['error' => 'Server error: ' . $e->getMessage()]);
 }

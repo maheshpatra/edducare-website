@@ -39,6 +39,32 @@ try {
     // Parse the JSON for the frontend
     $config['fields'] = is_string($config['fields_json']) ? json_decode($config['fields_json'], true) : $config['fields_json'];
 
+    // Fetch active payment gateways
+    $gw_query = "SELECT gateway_name, mode, config_json FROM school_payment_gateways WHERE school_id = :school_id AND is_active = 1";
+    $gw_stmt = $db->prepare($gw_query);
+    $gw_stmt->execute([':school_id' => $school_id]);
+    $gateways = $gw_stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $safe_gateways = [];
+    foreach ($gateways as $gw) {
+        $json = json_decode($gw['config_json'], true);
+        $safe_conf = [];
+        if ($gw['gateway_name'] === 'razorpay') {
+            $safe_conf = ['key_id' => $json['key_id'] ?? ''];
+        } else if ($gw['gateway_name'] === 'payu') {
+            $safe_conf = ['merchant_key' => $json['merchant_key'] ?? ''];
+        } else if ($gw['gateway_name'] === 'upi_qr') {
+            $safe_conf = ['qr_path' => $json['qr_path'] ?? ''];
+        }
+        
+        $safe_gateways[] = [
+            'name' => $gw['gateway_name'],
+            'mode' => $gw['mode'],
+            'config' => $safe_conf
+        ];
+    }
+    $config['payment_methods'] = $safe_gateways;
+
     echo json_encode(['success' => true, 'data' => $config]);
 
 } catch (Exception $e) {

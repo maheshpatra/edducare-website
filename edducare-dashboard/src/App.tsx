@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -16,6 +16,7 @@ import Fees from './pages/Fees';
 import Library from './pages/Library';
 import Assignments from './pages/Assignments';
 import Exams from './pages/Exams';
+import ExamResults from './pages/ExamResults';
 import Timetable from './pages/Timetable';
 import Announcements from './pages/Announcements';
 import Analytics from './pages/Analytics';
@@ -25,6 +26,9 @@ import WebsiteSettings from './pages/WebsiteSettings';
 import Admissions from './pages/Admissions';
 import ContactMessages from './pages/ContactMessages';
 import AcademicSessions from './pages/AcademicSessions';
+import PromoteStudents from './pages/PromoteStudents';
+import HumanResource from './pages/HumanResource';
+import Subjects from './pages/Subjects';
 
 import SuperAdminDashboard from './pages/superadmin/Dashboard';
 import SuperAdminSchools from './pages/superadmin/Schools';
@@ -42,11 +46,15 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/library': { title: 'Library', subtitle: 'Manage books, issues, and returns.' },
   '/assignments': { title: 'Assignments', subtitle: 'Create and manage student assignments.' },
   '/exams': { title: 'Examinations', subtitle: 'Schedule and manage school examinations.' },
+  '/exam-results': { title: 'Upload Results', subtitle: 'Enter and manage student exam marks.' },
   '/timetable': { title: 'Timetable', subtitle: 'View and manage class timetables.' },
   '/announcements': { title: 'Announcements', subtitle: 'Publish and manage school announcements.' },
   '/analytics': { title: 'Analytics', subtitle: 'Deep insights into school performance.' },
   '/reports': { title: 'Reports', subtitle: 'Generate and download detailed reports.' },
   '/sessions': { title: 'Academic Sessions', subtitle: 'Manage academic years and active sessions.' },
+  '/promote-students': { title: 'Promote Students', subtitle: 'Promote students to the next session, class, or section.' },
+  '/hr': { title: 'Human Resource', subtitle: 'Manage staff, payroll, leaves, departments, and birthdays.' },
+  '/subjects': { title: 'Subjects', subtitle: 'Manage school curriculum and subject allocations.' },
   '/settings': { title: 'Settings', subtitle: 'Configure school and system preferences.' },
   '/website': { title: 'Website Settings', subtitle: 'Customize your school website appearance and content.' },
   '/admissions': { title: 'Admissions', subtitle: 'Review and manage student admission requests.' },
@@ -58,14 +66,8 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
 const AppShell: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
-  const [pathname, setPathname] = useState(window.location.pathname);
-
-  // listen to route changes to update title
-  React.useEffect(() => {
-    const handler = () => setPathname(window.location.pathname);
-    window.addEventListener('popstate', handler);
-    return () => window.removeEventListener('popstate', handler);
-  }, []);
+  const location = useLocation();
+  const pathname = location.pathname;
 
   if (isLoading) {
     return (
@@ -111,11 +113,15 @@ const AppShell: React.FC = () => {
             <Route path="/library" element={<Library />} />
             <Route path="/assignments" element={<Assignments />} />
             <Route path="/exams" element={<Exams />} />
+            <Route path="/exam-results" element={<ExamResults />} />
             <Route path="/timetable" element={<Timetable />} />
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/sessions" element={<AcademicSessions />} />
+            <Route path="/promote-students" element={<PromoteStudents />} />
+            <Route path="/hr" element={<HumanResource />} />
+            <Route path="/subjects" element={<Subjects />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/website" element={<WebsiteSettings />} />
             <Route path="/admissions" element={<Admissions />} />

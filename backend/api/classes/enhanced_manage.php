@@ -480,7 +480,7 @@ function handleCreateClass($db, $user)
 {
     $input = json_decode(file_get_contents('php://input'), true);
 
-    $required = ['name', 'grade_level', 'academic_year_id'];
+    $required = ['name', 'grade_level'];
     foreach ($required as $field) {
         if (!isset($input[$field]) || empty($input[$field])) {
             Response::error("Field '$field' is required", 400);
@@ -491,17 +491,6 @@ function handleCreateClass($db, $user)
 
     if (!$schoolId) {
         Response::error('School ID is required', 400);
-    }
-
-    // Validate academic year belongs to school
-    $ayQuery = "SELECT id FROM academic_years WHERE id = :academic_year_id AND school_id = :school_id";
-    $ayStmt = $db->prepare($ayQuery);
-    $ayStmt->bindValue(':academic_year_id', $input['academic_year_id']);
-    $ayStmt->bindValue(':school_id', $schoolId);
-    $ayStmt->execute();
-
-    if (!$ayStmt->fetch()) {
-        Response::error('Invalid academic year for this school', 400);
     }
 
     // Validate class teacher if provided
@@ -520,30 +509,28 @@ function handleCreateClass($db, $user)
     $db->beginTransaction();
 
     try {
-        // Check for duplicate class name in same academic year
-        $duplicateQuery = "SELECT id FROM classes WHERE school_id = :school_id AND name = :name AND academic_year_id = :academic_year_id";
+        // Check for duplicate class name in same school
+        $duplicateQuery = "SELECT id FROM classes WHERE school_id = :school_id AND name = :name";
         $duplicateStmt = $db->prepare($duplicateQuery);
         $duplicateStmt->bindValue(':school_id', $schoolId);
         $duplicateStmt->bindValue(':name', $input['name']);
-        $duplicateStmt->bindValue(':academic_year_id', $input['academic_year_id']);
         $duplicateStmt->execute();
 
         if ($duplicateStmt->fetch()) {
-            Response::error('Class with this name already exists in the academic year', 400);
+            Response::error('Class with this name already exists', 400);
         }
 
-        // Insert class
-        $query = "INSERT INTO classes (school_id, name, grade_level, academic_year_id, class_teacher_id, room_number, capacity) 
-                 VALUES (:school_id, :name, :grade_level, :academic_year_id, :class_teacher_id, :room_number, :capacity)";
+        // Insert class (no academic_year_id — classes are session-independent)
+        $query = "INSERT INTO classes (school_id, name, grade_level, class_teacher_id, room_number, capacity) 
+                 VALUES (:school_id, :name, :grade_level, :class_teacher_id, :room_number, :capacity)";
 
         $stmt = $db->prepare($query);
         $stmt->bindValue(':school_id', $schoolId);
         $stmt->bindValue(':name', $input['name']);
         $stmt->bindValue(':grade_level', $input['grade_level']);
-        $stmt->bindValue(':academic_year_id', $input['academic_year_id']);
-        $stmt->bindValue(':class_teacher_id', $input['class_teacher_id']);
-        $stmt->bindValue(':room_number', $input['room_number']);
-        $stmt->bindValue(':capacity', $input['capacity']);
+        $stmt->bindValue(':class_teacher_id', $input['class_teacher_id'] ?? null);
+        $stmt->bindValue(':room_number', $input['room_number'] ?? null);
+        $stmt->bindValue(':capacity', $input['capacity'] ?? 30);
 
         $stmt->execute();
         $classId = $db->lastInsertId();

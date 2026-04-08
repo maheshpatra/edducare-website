@@ -307,7 +307,7 @@ CREATE TABLE `classes` (
   `school_id` int(11) NOT NULL,
   `name` varchar(100) NOT NULL,
   `grade_level` int(11) DEFAULT NULL,
-  `academic_year_id` int(11) NOT NULL,
+  `academic_year_id` int(11) DEFAULT NULL,
   `class_teacher_id` int(11) DEFAULT NULL,
   `room_number` varchar(50) DEFAULT NULL,
   `capacity` int(11) DEFAULT 30,
@@ -317,7 +317,6 @@ CREATE TABLE `classes` (
   KEY `academic_year_id` (`academic_year_id`),
   KEY `class_teacher_id` (`class_teacher_id`),
   CONSTRAINT `classes_ibfk_1` FOREIGN KEY (`school_id`) REFERENCES `schools` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `classes_ibfk_2` FOREIGN KEY (`academic_year_id`) REFERENCES `academic_years` (`id`),
   CONSTRAINT `classes_ibfk_3` FOREIGN KEY (`class_teacher_id`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

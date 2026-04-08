@@ -365,7 +365,25 @@ export const examService = {
         end_date?: string;
         academic_year_id?: number | string;
     }) => api.post('/exams/create', data),
+
+    /** GET /exams/results?action=students&exam_id=X&class_id=Y&section_id=Z */
+    getStudentsForResult: (params: { 
+        exam_id: number | string; 
+        class_id: number | string; 
+        section_id: number | string;
+        page?: number;
+        limit?: number;
+    }) => api.get('/exams/results', { params: { action: 'students', ...params } }),
+
+    /** GET /exams/results?exam_id=X – get saved results */
+    getResults: (examId: number | string) =>
+        api.get('/exams/results', { params: { exam_id: examId } }),
+
+    /** POST /exams/results – save results */
+    saveResults: (data: { exam_id: number | string; results: Array<{ student_id: number; marks: number }> }) =>
+        api.post('/exams/results', data),
 };
+
 
 // ─── Announcements ────────────────────────────────────────────────────────────
 export const announcementService = {
@@ -463,7 +481,12 @@ export const websiteService = {
     getAdmissionConfig: () => api.get('/website/admission_config'),
 
     /** POST /website/admission_config */
-    updateAdmissionConfig: (data: any) => api.post('/website/admission_config', data),
+    updateAdmissionConfig: (data: any) => {
+        if (data instanceof FormData) {
+            return api.post('/website/admission_config', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+        }
+        return api.post('/website/admission_config', data);
+    },
 
     /** GET /website/email_config */
     getEmailConfig: () => api.get('/website/email_config'),
@@ -474,6 +497,15 @@ export const websiteService = {
     /** GET /website/contact_list */
     listContactMessages: (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
         api.get('/website/contact_list', { params }),
+
+    // Payment Gateways
+    getPaymentGateways: () => api.get('/website/payment_gateways'),
+    updatePaymentGateway: (data: any) => {
+        if (data instanceof FormData) {
+            return api.post('/website/payment_gateways', data, { headers: { 'Content-Type': 'multipart/form-data' } });
+        }
+        return api.post('/website/payment_gateways', data);
+    },
 };
 
 // ─── Admissions ───────────────────────────────────────────────────────────────
@@ -485,6 +517,35 @@ export const admissionsService = {
     /** GET /admissions/get_by_tracking – find one by tracking ID */
     getByTracking: (tracking_id: string) =>
         api.get('/admissions/get_by_tracking', { params: { tracking_id } }),
+};
+
+// ─── Student Promotion ────────────────────────────────────────────────────────
+export const promotionService = {
+    /** GET /students/promote?action=sessions – list academic sessions */
+    getSessions: () => api.get('/students/promote', { params: { action: 'sessions' } }),
+
+    /** GET /students/promote?action=classes – all classes for the school (not session-specific) */
+    getClasses: (academicYearId?: string | number) =>
+        api.get('/students/promote', { params: { action: 'classes', ...(academicYearId ? { academic_year_id: academicYearId } : {}) } }),
+
+    /** GET /students/promote?action=sections&class_id=X – sections for a class */
+    getSectionsByClass: (classId: string | number) =>
+        api.get('/students/promote', { params: { action: 'sections', class_id: classId } }),
+
+    /** GET /students/promote?action=students&class_id=X&section_id=Y&academic_year_id=Z */
+    getStudents: (params: { class_id: string | number; section_id: string | number; academic_year_id?: string | number }) =>
+        api.get('/students/promote', { params: { action: 'students', ...params } }),
+
+    /** POST /students/promote – promote students to new session/class/section */
+    promote: (data: {
+        student_ids: number[];
+        from_academic_year_id: number;
+        from_class_id: number;
+        from_section_id: number;
+        to_academic_year_id: number;
+        to_class_id: number;
+        to_section_id: number;
+    }) => api.post('/students/promote', data),
 };
 
 // ─── Reports ───────────────────────────────────────────────────────────────────
@@ -521,4 +582,47 @@ export const timetableService = {
     create: (data: any) => api.post('/timetable/manage', data),
     update: (data: any) => api.put('/timetable/manage', data),
     delete: (id: number) => api.delete(`/timetable/manage?timetable_id=${id}`),
+};
+
+// ─── Human Resource ───────────────────────────────────────────────────────────
+export const hrService = {
+    dashboard: () => api.get('/hr/manage', { params: { action: 'dashboard' } }),
+    birthdays: (params?: { type?: string; days?: number }) =>
+        api.get('/hr/manage', { params: { action: 'birthdays', ...params } }),
+    leavesToday: () => api.get('/hr/manage', { params: { action: 'leaves_today' } }),
+    staff: () => api.get('/hr/manage', { params: { action: 'staff' } }),
+
+    // Departments
+    getDepartments: () => api.get('/hr/manage', { params: { action: 'departments' } }),
+    createDepartment: (data: any) => api.post('/hr/manage?action=department', data),
+    deleteDepartment: (id: number) => api.delete(`/hr/manage?action=department&id=${id}`),
+
+    // Designations
+    getDesignations: () => api.get('/hr/manage', { params: { action: 'designations' } }),
+    createDesignation: (data: any) => api.post('/hr/manage?action=designation', data),
+    deleteDesignation: (id: number) => api.delete(`/hr/manage?action=designation&id=${id}`),
+
+    // Leave Types
+    getLeaveTypes: () => api.get('/hr/manage', { params: { action: 'leave_types' } }),
+    createLeaveType: (data: any) => api.post('/hr/manage?action=leave_type', data),
+    deleteLeaveType: (id: number) => api.delete(`/hr/manage?action=leave_type&id=${id}`),
+
+    // Leave Requests
+    getLeaveRequests: (status?: string) =>
+        api.get('/hr/manage', { params: { action: 'leave_requests', ...(status ? { status } : {}) } }),
+    createLeaveRequest: (data: any) => api.post('/hr/manage?action=leave_request', data),
+    approveLeave: (id: number, remarks?: string) =>
+        api.post('/hr/manage?action=approve_leave', { id, remarks }),
+    rejectLeave: (id: number, remarks?: string) =>
+        api.post('/hr/manage?action=reject_leave', { id, remarks }),
+
+    // Payroll
+    getPayroll: (month: number, year: number) =>
+        api.get('/hr/manage', { params: { action: 'payroll', month, year } }),
+    generatePayroll: (month: number, year: number) =>
+        api.post('/hr/manage?action=generate_payroll', { month, year }),
+    setSalary: (userId: number, salary: number) =>
+        api.post('/hr/manage?action=set_salary', { user_id: userId, salary }),
+    paySalary: (payrollId: number, method?: string) =>
+        api.post('/hr/manage?action=pay_salary', { payroll_id: payrollId, payment_method: method }),
 };

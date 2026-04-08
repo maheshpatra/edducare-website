@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import {
     Globe, Palette, Image as ImageIcon, BarChart3, Layout, Upload, Save, Trash2, Plus,
-    Eye, RefreshCw, Monitor, Mail, FileText
+    Eye, RefreshCw, Monitor, Mail, FileText, XCircle, CreditCard, Shield, Settings2, Zap
 } from 'lucide-react';
 
 
@@ -54,7 +54,7 @@ const FONTS = [
 
 const WebsiteSettings: React.FC = () => {
     const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState<'theme' | 'content' | 'gallery' | 'stats' | 'admissions' | 'email'>('theme');
+    const [activeTab, setActiveTab] = useState<'theme' | 'content' | 'gallery' | 'stats' | 'admissions' | 'email' | 'payments'>('theme');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
@@ -94,6 +94,12 @@ const WebsiteSettings: React.FC = () => {
         previous_school: { enabled: false, required: false }
     });
 
+    const [isAdmissionFeeEnabled, setIsAdmissionFeeEnabled] = useState(false);
+    const [admissionFeeAmount, setAdmissionFeeAmount] = useState(0);
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [qrFile, setQrFile] = useState<File | null>(null);
+    const qrFileRef = useRef<HTMLInputElement>(null);
+
     // Email state
     const [emailConfig, setEmailConfig] = useState({
         use_custom: false,
@@ -105,6 +111,9 @@ const WebsiteSettings: React.FC = () => {
         from_email: '',
         from_name: ''
     });
+
+    // Payment Gateways state
+    const [paymentGateways, setPaymentGateways] = useState<Record<string, any>>({});
 
     // Image file refs
     const heroFileRef = useRef<HTMLInputElement>(null);
@@ -124,12 +133,13 @@ const WebsiteSettings: React.FC = () => {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [themeRes, galleryRes, statsRes, admissionRes, emailRes] = await Promise.allSettled([
+            const [themeRes, galleryRes, statsRes, admissionRes, emailRes, paymentRes] = await Promise.allSettled([
                 websiteService.getTheme(),
                 websiteService.getGallery(),
                 websiteService.getStats(),
                 websiteService.getAdmissionConfig(),
-                websiteService.getEmailConfig()
+                websiteService.getEmailConfig(),
+                websiteService.getPaymentGateways()
             ]);
 
             if (themeRes.status === 'fulfilled' && themeRes.value.data?.success) {
@@ -153,6 +163,9 @@ const WebsiteSettings: React.FC = () => {
                          console.error("error parse fields_json", e);
                     }
                 }
+                setIsAdmissionFeeEnabled(admissionRes.value.data.data?.is_admission_fee_enabled === 1);
+                setAdmissionFeeAmount(Number(admissionRes.value.data.data?.admission_fee_amount || 0));
+                setQrCode(admissionRes.value.data.data?.qr_code || null);
             }
             if (emailRes?.status === 'fulfilled' && emailRes.value.data?.success) {
                 if (emailRes.value.data.data) {
@@ -161,6 +174,9 @@ const WebsiteSettings: React.FC = () => {
                         use_custom: emailRes.value.data.data.use_custom === 1 || emailRes.value.data.data.use_custom === true
                     }));
                 }
+            }
+            if (paymentRes?.status === 'fulfilled' && paymentRes.value.data?.success) {
+                setPaymentGateways(paymentRes.value.data.data);
             }
         } catch (err) {
             console.error('Failed to load website settings:', err);
@@ -256,8 +272,21 @@ const WebsiteSettings: React.FC = () => {
     const handleSaveAdmissionConfig = async () => {
         setSaving(true);
         try {
-            await websiteService.updateAdmissionConfig({ fields_json: JSON.stringify(admissionFields) });
-            toast.success('Admission form settings saved!');
+            const formData = new FormData();
+            formData.append('fields_json', JSON.stringify(admissionFields));
+            formData.append('is_admission_fee_enabled', isAdmissionFeeEnabled ? '1' : '0');
+            formData.append('admission_fee_amount', admissionFeeAmount.toString());
+            
+            if (qrFile) {
+                formData.append('qr_code', qrFile);
+            }
+
+            const res = await websiteService.updateAdmissionConfig(formData);
+            if (res.data?.success) {
+                toast.success('Admission settings saved!');
+                if (res.data.qr_code) setQrCode(res.data.qr_code);
+                setQrFile(null);
+            }
         } catch (err: any) {
             toast.error(err?.response?.data?.error || 'Failed to save admission settings');
         }
@@ -275,12 +304,58 @@ const WebsiteSettings: React.FC = () => {
         setSaving(false);
     };
 
+    const handleSaveGateway = async (gatewayName: string, file?: File) => {
+        setSaving(true);
+        try {
+            const gw = paymentGateways[gatewayName];
+            if (!gw) {
+                toast.error(`Configuration for ${gatewayName} not found`);
+                setSaving(false);
+                return;
+            }
+            let payload: any;
+            
+            if (gatewayName === 'upi_qr' && file) {
+                payload = new FormData();
+                payload.append('gateway_name', gatewayName);
+                payload.append('is_active', gw.is_active ? '1' : '0');
+                payload.append('mode', gw.mode);
+                payload.append('config', JSON.stringify(gw.config));
+                payload.append('qr_code', file);
+            } else {
+                payload = {
+                    gateway_name: gatewayName,
+                    is_active: gw.is_active,
+                    mode: gw.mode,
+                    config: gw.config
+                };
+            }
+
+            const res = await websiteService.updatePaymentGateway(payload);
+            toast.success(`${gatewayName.toUpperCase()} settings updated!`);
+            
+            if (res.data?.qr_path) {
+                setPaymentGateways(p => ({
+                    ...p, 
+                    upi_qr: { 
+                        ...p.upi_qr, 
+                        config: { ...p.upi_qr.config, qr_path: res.data.qr_path } 
+                    }
+                }));
+            }
+        } catch (err: any) {
+            toast.error(err?.response?.data?.error || `Failed to update ${gatewayName}`);
+        }
+        setSaving(false);
+    };
+
     const tabs = [
         { id: 'theme' as const, label: 'Theme & Template', icon: Palette },
         { id: 'content' as const, label: 'Content', icon: Layout },
         { id: 'gallery' as const, label: 'Gallery', icon: ImageIcon },
         { id: 'stats' as const, label: 'Statistics', icon: BarChart3 },
         { id: 'admissions' as const, label: 'Admission Form', icon: FileText },
+        { id: 'payments' as const, label: 'Payment Methods', icon: CreditCard },
         { id: 'email' as const, label: 'Email Setup', icon: Mail },
     ];
 
@@ -640,6 +715,45 @@ const WebsiteSettings: React.FC = () => {
                         </div>
                     </div>
                     
+
+
+                    {/* Fee & QR Section */}
+                    <div className="card" style={{ padding: 32, marginTop: 24 }}>
+                        <div style={{ display: 'flex', gap: 20, marginBottom: 24 }}>
+                            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(245,158,11,0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <ImageIcon size={24} />
+                            </div>
+                            <div>
+                                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Admission Fees & Payments</h4>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: 0 }}>Set up online payments for admission requests</p>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32 }}>
+                            <div className="glass-card" style={{ padding: 24, background: 'var(--bg-elevated)', border: '1px solid var(--bg-border)', borderRadius: 16 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                                    <label style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Collect Admission Fee</label>
+                                    <label className="switch">
+                                        <input type="checkbox" checked={isAdmissionFeeEnabled} onChange={e => setIsAdmissionFeeEnabled(e.target.checked)} />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                                
+                                <div style={{ opacity: isAdmissionFeeEnabled ? 1 : 0.5, pointerEvents: isAdmissionFeeEnabled ? 'auto' : 'none', transition: 'all 0.3s' }}>
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Admission Fee Amount (₹)</label>
+                                    <input 
+                                        type="number" 
+                                        className="form-input" 
+                                        value={admissionFeeAmount} 
+                                        onChange={e => setAdmissionFeeAmount(parseFloat(e.target.value) || 0)} 
+                                        placeholder="Enter amount"
+                                    />
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>This amount will be shown to parents during the admission process.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <button onClick={handleSaveAdmissionConfig} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 10, padding: '16px 40px', borderRadius: 14 }}>
                         {saving ? <RefreshCw size={18} className="spin" /> : <Save size={18} />} Save Admission Rules
                     </button>
@@ -728,6 +842,210 @@ const WebsiteSettings: React.FC = () => {
                     <button onClick={handleSaveEmailConfig} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 10, padding: '16px 40px', borderRadius: 14 }}>
                         {saving ? <RefreshCw size={18} className="spin" /> : <Save size={18} />} Save Mail Server
                     </button>
+                </div>
+            )}
+
+            {/* ═══ PAYMENTS TAB ═══ */}
+            {activeTab === 'payments' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                    {/* Razorpay Section */}
+                    <div className="card" style={{ padding: 32 }}>
+                        <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(59,130,246,0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <Zap size={28} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Razorpay Integration</h3>
+                                    <label className="switch">
+                                        <input type="checkbox" checked={paymentGateways['razorpay']?.is_active} 
+                                            onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, is_active: e.target.checked } }))} 
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>Configure Razorpay for seamless card, netbanking and wallet payments.</p>
+                            </div>
+                        </div>
+
+                        {paymentGateways['razorpay']?.is_active && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                                <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                        <Shield size={18} className="text-accent" />
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Environment Mode</h4>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        {['sandbox', 'live'].map(mode => (
+                                            <button key={mode} 
+                                                onClick={() => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, mode: mode } }))}
+                                                style={{ 
+                                                    flex: 1, padding: '12px', borderRadius: 12, border: '2px solid', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', transition: 'all 0.2s',
+                                                    borderColor: paymentGateways['razorpay'].mode === mode ? 'var(--accent)' : 'var(--bg-border)',
+                                                    background: paymentGateways['razorpay'].mode === mode ? 'var(--accent-light)' : 'transparent',
+                                                    color: paymentGateways['razorpay'].mode === mode ? 'var(--accent)' : 'var(--text-muted)'
+                                                }}
+                                            >
+                                                {mode}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                                    <div className="form-group-fancy">
+                                        <label>Key ID</label>
+                                        <input className="form-input-fancy" value={paymentGateways['razorpay'].config?.key_id || ''} 
+                                            onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, key_id: e.target.value } } }))} 
+                                            placeholder="rzp_test_..." 
+                                        />
+                                    </div>
+                                    <div className="form-group-fancy">
+                                        <label>Key Secret</label>
+                                        <input type="password" className="form-input-fancy" value={paymentGateways['razorpay'].config?.key_secret || ''} 
+                                            onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, key_secret: e.target.value } } }))} 
+                                            placeholder="••••••••••••" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <button onClick={() => handleSaveGateway('razorpay')} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update Razorpay
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* PayU Section */}
+                    <div className="card" style={{ padding: 32 }}>
+                        <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(5,150,105,0.1)', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <CreditCard size={28} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>PayU / PayUMoney Integration</h3>
+                                    <label className="switch">
+                                        <input type="checkbox" checked={paymentGateways['payu']?.is_active} 
+                                            onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, is_active: e.target.checked } }))} 
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>Collect payments using PayU's robust payment stack.</p>
+                            </div>
+                        </div>
+
+                        {paymentGateways['payu']?.is_active && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                                <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                        <Shield size={18} className="text-accent" />
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Environment Mode</h4>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 12 }}>
+                                        {['sandbox', 'live'].map(mode => (
+                                            <button key={mode} 
+                                                onClick={() => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, mode: mode } }))}
+                                                style={{ 
+                                                    flex: 1, padding: '12px', borderRadius: 12, border: '2px solid', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', transition: 'all 0.2s',
+                                                    borderColor: paymentGateways['payu'].mode === mode ? 'var(--accent)' : 'var(--bg-border)',
+                                                    background: paymentGateways['payu'].mode === mode ? 'var(--accent-light)' : 'transparent',
+                                                    color: paymentGateways['payu'].mode === mode ? 'var(--accent)' : 'var(--text-muted)'
+                                                }}
+                                            >
+                                                {mode}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                                    <div className="form-group-fancy">
+                                        <label>Merchant Key</label>
+                                        <input className="form-input-fancy" value={paymentGateways['payu'].config?.merchant_key || ''} 
+                                            onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, merchant_key: e.target.value } } }))} 
+                                            placeholder="PayU Merchant Key" 
+                                        />
+                                    </div>
+                                    <div className="form-group-fancy">
+                                        <label>Merchant Salt</label>
+                                        <input type="password" className="form-input-fancy" value={paymentGateways['payu'].config?.merchant_salt || ''} 
+                                            onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, merchant_salt: e.target.value } } }))} 
+                                            placeholder="••••••••••••" 
+                                        />
+                                    </div>
+                                </div>
+
+                                <button onClick={() => handleSaveGateway('payu')} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update PayU
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* UPI QR Section */}
+                    <div className="card" style={{ padding: 32 }}>
+                        <div style={{ display: 'flex', gap: 20, marginBottom: 32 }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(245,158,11,0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <ImageIcon size={28} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>UPI QR Payment</h3>
+                                    <label className="switch">
+                                        <input type="checkbox" checked={paymentGateways['upi_qr']?.is_active} 
+                                            onChange={e => setPaymentGateways(p => ({ ...p, upi_qr: { ...p.upi_qr, is_active: e.target.checked } }))} 
+                                        />
+                                        <span className="slider round"></span>
+                                    </label>
+                                </div>
+                                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', margin: 0 }}>Accept direct payments to your bank account via UPI QR code.</p>
+                            </div>
+                        </div>
+
+                        {paymentGateways['upi_qr']?.is_active && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                                <div style={{ background: 'var(--bg-elevated)', padding: '16px 24px', borderRadius: 20, border: '1px solid var(--bg-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <Shield size={18} className="text-accent" />
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Payment Environment</h4>
+                                    </div>
+                                    <span style={{ padding: '6px 14px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>Live Payment Only</span>
+                                </div>
+
+                                <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
+                                    <label style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: 16 }}>Gateway Settings</label>
+                                    <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+                                        <div style={{ position: 'relative' }}>
+                                            {paymentGateways['upi_qr'].config?.qr_path || qrFile ? (
+                                                <img 
+                                                    src={qrFile ? URL.createObjectURL(qrFile) : resolveImg(paymentGateways['upi_qr'].config.qr_path)} 
+                                                    alt="UPI QR" 
+                                                    style={{ width: 120, height: 120, objectFit: 'contain', background: 'white', borderRadius: 12, padding: 8, border: '1px solid var(--bg-border)' }} 
+                                                />
+                                            ) : (
+                                                <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface)', border: '2px dashed var(--bg-border)', borderRadius: 12 }}>
+                                                    <ImageIcon size={32} style={{ opacity: 0.2 }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <input type="file" ref={qrFileRef} accept="image/*" style={{ display: 'none' }} onChange={e => setQrFile(e.target.files?.[0] || null)} />
+                                            <button onClick={() => qrFileRef.current?.click()} className="btn btn-secondary" style={{ marginBottom: 12 }}>
+                                                <Upload size={16} style={{ marginRight: 8 }} /> {qrFile ? 'Change QR' : 'Upload QR Code'}
+                                            </button>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>This QR will be shown to users. They will need to upload proof of payment (UTR number).</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button onClick={() => handleSaveGateway('upi_qr', qrFile || undefined)} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update UPI Settings
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>
