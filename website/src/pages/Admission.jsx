@@ -43,6 +43,18 @@ export default function Admission() {
     } else {
         setLoading(false);
     }
+
+    // Check for PayU return status
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('status') === 'success') {
+       setTrackingId(params.get('txnid'));
+       setIsSuccess(true);
+       // Clear params to prevent double success on refresh
+       window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (params.get('status') === 'failure') {
+       alert("Payment failed. Please try again.");
+       window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [activeSchool]);
 
   const handleChange = (e) => {
@@ -103,7 +115,7 @@ export default function Admission() {
         const razorpayMethod = config.payment_methods.find(m => m.name === 'razorpay');
 
         const options = {
-            key: razorpayMethod.config.key_id,
+            key: razorpayMethod.mode === 'sandbox' ? (razorpayMethod.config.sandbox_key_id || razorpayMethod.config.key_id) : (razorpayMethod.config.live_key_id || razorpayMethod.config.key_id),
             amount: order.amount,
             currency: 'INR',
             name: activeSchool.name,
@@ -144,6 +156,76 @@ export default function Admission() {
     } catch (err) {
         console.error(err);
         alert("Payment initialization failed");
+    }
+  };
+
+  const handlePayUShow = async () => {
+    setIsSubmitting(true);
+    try {
+        // 1. Submit application first as pending
+        const payload = { 
+            ...formData, 
+            school_id: activeSchool.id,
+            payment_status: 'pending' // explicit
+        };
+        const submitRes = await axios.post(`${API_BASE}/submit_admission`, payload);
+        
+        if (!submitRes.data.success) {
+            alert("Failed to save application: " + submitRes.data.error);
+            setIsSubmitting(false);
+            return;
+        }
+
+        const tid = submitRes.data.tracking_id;
+
+        // 2. Get PayU Hash and params
+        const hashRes = await axios.post(`${API_BASE}/create_payu_hash`, {
+            school_id: activeSchool.id,
+            amount: config.admission_fee_amount,
+            firstname: formData.student_name,
+            email: formData.email,
+            phone: formData.phone,
+            productinfo: "Admission_" + tid,
+            udf1: tid // Pass tid so it can be included in the hash
+        });
+
+        if (!hashRes.data.success) {
+            alert("Payment init error: " + hashRes.data.error);
+            setIsSubmitting(false);
+            return;
+        }
+
+        const params = hashRes.data.payment_params;
+        
+        // 3. Create a temporary form and submit it to PayU
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = params.action;
+
+        // Add all params as hidden inputs (hashRes already includes udf1, surl, furl)
+        const finalParams = {
+            ...params,
+            surl: `https://edducare.finafid.org/api/public/payu_callback.php`,
+            furl: `https://edducare.finafid.org/api/public/payu_callback.php`,
+        };
+
+        Object.keys(finalParams).forEach(key => {
+            if (key !== 'action') {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = finalParams[key];
+                form.appendChild(input);
+            }
+        });
+
+        document.body.appendChild(form);
+        form.submit();
+
+    } catch (err) {
+        console.error(err);
+        alert("PayU connection failed");
+        setIsSubmitting(false);
     }
   };
 
@@ -335,7 +417,14 @@ export default function Admission() {
                            <CreditCard size={20} /> <span>PayU Checkout</span>
                          </div>
                          <p className="text-sm text-emerald-600/70 mb-6 font-medium">Fast & Secure multi-option payments</p>
-                         <button type="button" className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-emerald-600/20">Proceed to PayU</button>
+                          <button 
+                            type="button" 
+                            onClick={handlePayUShow}
+                            disabled={isSubmitting}
+                            className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-colors"
+                          >
+                            {isSubmitting ? 'Initializing...' : `Pay ₹${config?.admission_fee_amount} Now`}
+                          </button>
                       </div>
                     )}
 

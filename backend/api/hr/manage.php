@@ -124,13 +124,22 @@ function handleBirthdays($db, $user) {
     if (!$schoolId) { Response::error('School ID required', 400); }
 
     $type = $_GET['type'] ?? 'all'; // 'staff', 'student', 'all'
-    $days = min(90, max(1, intval($_GET['days'] ?? 30)));
+    $days = min(365, max(1, intval($_GET['days'] ?? 30)));
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $limit = max(1, min(100, intval($_GET['limit'] ?? 20)));
+    $offset = ($page - 1) * $limit;
+    
     $results = [];
 
+    // We use a UNION to get both staff and students in one go for efficient paging
+    $queries = [];
+    $params = [':sid' => $schoolId, ':days' => $days];
+
     if ($type === 'staff' || $type === 'all') {
-        $q = $db->prepare("SELECT u.id, u.first_name, u.last_name, u.date_of_birth, u.profile_image,
+        $queries[] = "SELECT u.id, u.first_name, u.last_name, u.date_of_birth, u.profile_image,
             'staff' as person_type,
             CONCAT(u.first_name, ' ', u.last_name) as full_name,
+            NULL as class_name, NULL as section_name,
             DATE_FORMAT(u.date_of_birth, '%b %d') as birthday_display,
             DATEDIFF(
                 DATE_ADD(u.date_of_birth, INTERVAL (YEAR(CURDATE()) - YEAR(u.date_of_birth) +
@@ -139,16 +148,11 @@ function handleBirthdays($db, $user) {
             ) as days_until
             FROM users u
             WHERE u.school_id = :sid AND u.role_id IN (3,4,5,6) AND u.is_active = 1
-            AND u.date_of_birth IS NOT NULL
-            HAVING days_until >= 0 AND days_until <= :days
-            ORDER BY days_until ASC
-            LIMIT 20");
-        $q->execute([':sid' => $schoolId, ':days' => $days]);
-        $results = array_merge($results, $q->fetchAll(PDO::FETCH_ASSOC));
+            AND u.date_of_birth IS NOT NULL";
     }
 
     if ($type === 'student' || $type === 'all') {
-        $q = $db->prepare("SELECT s.id, s.first_name, s.last_name, s.date_of_birth, s.profile_image,
+        $queries[] = "SELECT s.id, s.first_name, s.last_name, s.date_of_birth, s.profile_image,
             'student' as person_type,
             CONCAT(s.first_name, ' ', s.last_name) as full_name,
             c.name as class_name, sec.name as section_name,
@@ -163,18 +167,38 @@ function handleBirthdays($db, $user) {
             LEFT JOIN classes c ON se.class_id = c.id
             LEFT JOIN sections sec ON se.section_id = sec.id
             WHERE s.school_id = :sid AND s.is_active = 1
-            AND s.date_of_birth IS NOT NULL
-            HAVING days_until >= 0 AND days_until <= :days
-            ORDER BY days_until ASC
-            LIMIT 30");
-        $q->execute([':sid' => $schoolId, ':days' => $days]);
-        $results = array_merge($results, $q->fetchAll(PDO::FETCH_ASSOC));
+            AND s.date_of_birth IS NOT NULL";
     }
 
-    // Sort combined results by days_until
-    usort($results, fn($a, $b) => $a['days_until'] - $b['days_until']);
+    $unionQuery = "SELECT * FROM (" . implode(" UNION ALL ", $queries) . ") as combined
+                   WHERE days_until >= 0 AND days_until <= :days
+                   ORDER BY days_until ASC";
+    
+    // Get total count for pagination
+    $countStmt = $db->prepare("SELECT COUNT(*) FROM ($unionQuery) as total");
+    $countStmt->execute($params);
+    $totalCount = (int)$countStmt->fetchColumn();
 
-    Response::success(['birthdays' => $results], 'Upcoming birthdays');
+    // Get paginated results
+    $paginatedQuery = $unionQuery . " LIMIT :limit OFFSET :offset";
+    $stmt = $db->prepare($paginatedQuery);
+    $stmt->bindValue(':sid', $schoolId, PDO::PARAM_INT);
+    $stmt->bindValue(':days', $days, PDO::PARAM_INT);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    
+    $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    Response::success([
+        'birthdays' => $results,
+        'pagination' => [
+            'total' => $totalCount,
+            'page' => $page,
+            'limit' => $limit,
+            'total_pages' => ceil($totalCount / $limit)
+        ]
+    ], 'Upcoming birthdays');
 }
 
 // ─── Staff on Leave Today ─────────────────────────────────────────────────────
@@ -275,10 +299,19 @@ function handleGetLeaveRequests($db, $user) {
     $schoolId = $user['role_name'] === 'super_admin' ? ($_GET['school_id'] ?? null) : $user['school_id'];
     if (!$schoolId) { Response::error('School ID required', 400); }
 
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $limit = max(1, min(100, intval($_GET['limit'] ?? 20)));
+    $offset = ($page - 1) * $limit;
     $status = $_GET['status'] ?? null;
+
     $where = "WHERE sl.school_id = :sid";
     $params = [':sid' => $schoolId];
     if ($status) { $where .= " AND sl.status = :status"; $params[':status'] = $status; }
+
+    // Total count
+    $countQ = $db->prepare("SELECT COUNT(*) FROM staff_leaves sl $where");
+    $countQ->execute($params);
+    $totalCount = (int)$countQ->fetchColumn();
 
     $q = $db->prepare("SELECT sl.*,
         CONCAT(u.first_name, ' ', u.last_name) as staff_name,
@@ -290,10 +323,25 @@ function handleGetLeaveRequests($db, $user) {
         JOIN leave_types lt ON sl.leave_type_id = lt.id
         LEFT JOIN users a ON sl.approved_by = a.id
         $where
-        ORDER BY sl.created_at DESC");
-    $q->execute($params);
+        ORDER BY sl.created_at DESC
+        LIMIT :limit OFFSET :offset");
+    
+    foreach ($params as $key => $val) {
+        $q->bindValue($key, $val);
+    }
+    $q->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $q->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $q->execute();
 
-    Response::success(['leave_requests' => $q->fetchAll(PDO::FETCH_ASSOC)]);
+    Response::success([
+        'leave_requests' => $q->fetchAll(PDO::FETCH_ASSOC),
+        'pagination' => [
+            'total' => $totalCount,
+            'page' => $page,
+            'limit' => $limit,
+            'total_pages' => ceil($totalCount / $limit)
+        ]
+    ]);
 }
 
 function handleCreateLeaveRequest($db, $user) {
@@ -322,8 +370,10 @@ function handleApproveLeave($db, $user) {
     $input = json_decode(file_get_contents('php://input'), true);
     if (empty($input['id'])) { Response::error('Leave ID required', 400); }
 
-    $q = $db->prepare("UPDATE staff_leaves SET status = 'approved', approved_by = :aid, remarks = :rem WHERE id = :id");
-    $q->execute([':aid' => $user['id'], ':rem' => $input['remarks'] ?? null, ':id' => $input['id']]);
+    $schoolId = $user['role_name'] === 'super_admin' ? ($input['school_id'] ?? $user['school_id']) : $user['school_id'];
+
+    $q = $db->prepare("UPDATE staff_leaves SET status = 'approved', approved_by = :aid, remarks = :rem WHERE id = :id AND school_id = :sid");
+    $q->execute([':aid' => $user['id'], ':rem' => $input['remarks'] ?? null, ':id' => $input['id'], ':sid' => $schoolId]);
 
     Response::success(null, 'Leave approved');
 }
@@ -332,8 +382,10 @@ function handleRejectLeave($db, $user) {
     $input = json_decode(file_get_contents('php://input'), true);
     if (empty($input['id'])) { Response::error('Leave ID required', 400); }
 
-    $q = $db->prepare("UPDATE staff_leaves SET status = 'rejected', approved_by = :aid, remarks = :rem WHERE id = :id");
-    $q->execute([':aid' => $user['id'], ':rem' => $input['remarks'] ?? null, ':id' => $input['id']]);
+    $schoolId = $user['role_name'] === 'super_admin' ? ($input['school_id'] ?? $user['school_id']) : $user['school_id'];
+
+    $q = $db->prepare("UPDATE staff_leaves SET status = 'rejected', approved_by = :aid, remarks = :rem WHERE id = :id AND school_id = :sid");
+    $q->execute([':aid' => $user['id'], ':rem' => $input['remarks'] ?? null, ':id' => $input['id'], ':sid' => $schoolId]);
 
     Response::success(null, 'Leave rejected');
 }
@@ -343,8 +395,10 @@ function handleSetSalary($db, $user) {
     $input = json_decode(file_get_contents('php://input'), true);
     if (empty($input['user_id']) || !isset($input['salary'])) { Response::error('User ID and salary required', 400); }
 
-    $q = $db->prepare("UPDATE users SET salary = :salary WHERE id = :uid");
-    $q->execute([':salary' => $input['salary'], ':uid' => $input['user_id']]);
+    $schoolId = $user['role_name'] === 'super_admin' ? ($input['school_id'] ?? $user['school_id']) : $user['school_id'];
+
+    $q = $db->prepare("UPDATE users SET salary = :salary WHERE id = :uid AND school_id = :sid");
+    $q->execute([':salary' => $input['salary'], ':uid' => $input['user_id'], ':sid' => $schoolId]);
 
     Response::success(null, 'Salary updated');
 }
@@ -452,18 +506,54 @@ function handleGetStaff($db, $user) {
     $schoolId = $user['role_name'] === 'super_admin' ? ($_GET['school_id'] ?? null) : $user['school_id'];
     if (!$schoolId) { Response::error('School ID required', 400); }
 
-    $q = $db->prepare("SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.employee_id,
+    $page = max(1, intval($_GET['page'] ?? 1));
+    $limit = max(1, min(100, intval($_GET['limit'] ?? 20)));
+    $offset = ($page - 1) * $limit;
+    $search = $_GET['search'] ?? null;
+
+    $where = "WHERE u.school_id = :sid AND u.role_id IN (3,4,5,6)";
+    $params = [':sid' => $schoolId];
+
+    if ($search) {
+        $where .= " AND (u.first_name LIKE :search OR u.last_name LIKE :search OR u.employee_id LIKE :search OR u.email LIKE :search)";
+        $params[':search'] = "%$search%";
+    }
+
+    // Get total count
+    $countQ = $db->prepare("SELECT COUNT(*) FROM users u $where");
+    $countQ->execute($params);
+    $totalCount = (int)$countQ->fetchColumn();
+
+    // Get paginated results
+    $query = "SELECT u.id, u.first_name, u.last_name, u.email, u.phone, u.employee_id,
         u.gender, u.date_of_birth, u.qualification, u.experience_years, u.joining_date, u.salary,
         u.is_active, u.profile_image, u.teacher_type, u.address,
         r.name as role_name,
         CONCAT(u.first_name, ' ', u.last_name) as full_name
         FROM users u
         JOIN user_roles r ON u.role_id = r.id
-        WHERE u.school_id = :sid AND u.role_id IN (3,4,5,6)
-        ORDER BY u.first_name");
-    $q->execute([':sid' => $schoolId]);
+        $where
+        ORDER BY u.first_name
+        LIMIT :limit OFFSET :offset";
+    
+    $stmt = $db->prepare($query);
+    foreach ($params as $key => $val) {
+        $stmt->bindValue($key, $val);
+    }
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+    $stmt->execute();
+    $staff = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    Response::success(['staff' => $q->fetchAll(PDO::FETCH_ASSOC)]);
+    Response::success([
+        'staff' => $staff,
+        'pagination' => [
+            'total' => $totalCount,
+            'page' => $page,
+            'limit' => $limit,
+            'total_pages' => ceil($totalCount / $limit)
+        ]
+    ]);
 }
 
 // ─── Generic Delete ───────────────────────────────────────────────────────────

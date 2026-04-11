@@ -43,6 +43,12 @@ export const authService = {
 
     /** POST /auth/logout */
     logout: () => api.post('/auth/logout'),
+
+    /** POST /auth/forgot-password */
+    forgotPassword: (email: string) => api.post('/auth/forgot-password', { email }),
+
+    /** POST /auth/reset-password */
+    resetPassword: (data: { token: string; password: string }) => api.post('/auth/reset-password', data),
 };
 
 // ─── Analytics / Dashboard ────────────────────────────────────────────────────
@@ -367,9 +373,9 @@ export const examService = {
     }) => api.post('/exams/create', data),
 
     /** GET /exams/results?action=students&exam_id=X&class_id=Y&section_id=Z */
-    getStudentsForResult: (params: { 
-        exam_id: number | string; 
-        class_id: number | string; 
+    getStudentsForResult: (params: {
+        exam_id: number | string;
+        class_id: number | string;
         section_id: number | string;
         page?: number;
         limit?: number;
@@ -382,6 +388,16 @@ export const examService = {
     /** POST /exams/results – save results */
     saveResults: (data: { exam_id: number | string; results: Array<{ student_id: number; marks: number }> }) =>
         api.post('/exams/results', data),
+
+    /** GET /exams/exam_types – list exam types for the school */
+    getExamTypes: () => api.get('/exams/exam_types'),
+
+    /** POST /exams/exam_types – create or update exam type */
+    saveExamType: (data: { id?: number; name: string; description?: string }) =>
+        api.post('/exams/exam_types', data),
+
+    /** DELETE /exams/exam_types?id=X – delete exam type */
+    deleteExamType: (id: number) => api.delete(`/exams/exam_types?id=${id}`),
 };
 
 
@@ -441,7 +457,13 @@ export const schoolService = {
     getProfile: (id?: number) => api.get('/schools/profile', { params: { id } }),
 
     /** POST /schools/profile – update specific school details */
-    updateProfile: (data: any) => api.post('/schools/profile', data),
+    updateProfile: (data: any) => api.post('/profile/update', data),
+};
+
+export const mainSiteService = {
+    getContacts: () => api.get('/superadmin/contacts'),
+    updateContactStatus: (id: number, status: string) => api.post('/superadmin/contacts', { id, status }),
+    deleteContact: (id: number) => api.delete('/superadmin/contacts', { data: { id } }),
 };
 
 // ─── Website Settings ─────────────────────────────────────────────────────────
@@ -495,7 +517,7 @@ export const websiteService = {
     updateEmailConfig: (data: any) => api.post('/website/email_config', data),
 
     /** GET /website/contact_list */
-    listContactMessages: (params?: { page?: number; limit?: number; search?: string; status?: string }) => 
+    listContactMessages: (params?: { page?: number; limit?: number; search?: string; status?: string }) =>
         api.get('/website/contact_list', { params }),
 
     // Payment Gateways
@@ -545,13 +567,14 @@ export const promotionService = {
         to_academic_year_id: number;
         to_class_id: number;
         to_section_id: number;
+        roll_numbers?: Record<number, string>;
     }) => api.post('/students/promote', data),
 };
 
 // ─── Reports ───────────────────────────────────────────────────────────────────
 export const reportService = {
     /** GET /reports/generate – triggers download or returns report content */
-    generate: (params: { 
+    generate: (params: {
         type: 'attendance' | 'financial' | 'academic' | 'enrollment' | 'teacher' | 'library';
         format: 'pdf' | 'excel' | 'csv' | 'json';
         dateFrom?: string;
@@ -562,7 +585,7 @@ export const reportService = {
         const token = localStorage.getItem('auth_token');
         const queryParams = { ...params, token };
         const queryString = new URLSearchParams(queryParams as any).toString();
-        
+
         // Use the absolute URL if BASE_URL is set, otherwise relative
         let baseUrl = BASE_URL;
         if (baseUrl === '/api') {

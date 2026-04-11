@@ -102,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuToggle }) => {
                         <div className="avatar" style={{ margin: 0, width: 32, height: 32, fontSize: '0.75rem' }}>
                             {getInitials()}
                         </div>
-                        <div style={{ textAlign: 'left', display: 'none', display: 'block' } as any}>
+                        <div style={{ textAlign: 'left' }}>
                             <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
                                 {user?.first_name} {user?.last_name}
                             </div>
@@ -115,12 +115,12 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuToggle }) => {
 
                     {showUserMenu && (
                         <div className="dropdown-menu">
-                            <div className="dropdown-header" style={{ padding: '16px 20px' }}>
+                            <div className="dropdown-header" style={{ padding: '20px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div className="avatar" style={{ width: 44, height: 44, fontSize: '1rem' }}>{getInitials()}</div>
+                                    <div className="avatar" style={{ width: 44, height: 44, fontSize: '1rem', background: 'var(--primary-light)', color: 'white' }}>{getInitials()}</div>
                                     <div>
-                                        <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{user?.first_name} {user?.last_name}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{user?.email}</div>
+                                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.95rem' }}>{user?.first_name} {user?.last_name}</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2, wordBreak: 'break-all' }}>{user?.email}</div>
                                     </div>
                                 </div>
                             </div>
@@ -129,24 +129,16 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle, onMenuToggle }) => {
                                     { icon: <User size={16} />, label: 'My Profile', path: '/settings' },
                                     { icon: <Settings size={16} />, label: 'Preferences', path: '/settings' },
                                 ].map((item, i) => (
-                                    <div key={i} className="nav-item" style={{ margin: '2px 0' }} onClick={() => setShowUserMenu(false)}>
-                                        <div className="nav-item-icon" style={{ color: 'var(--text-muted)' }}>{item.icon}</div>
-                                        <span className="nav-item-label">{item.label}</span>
+                                    <div key={i} className="dropdown-item" onClick={() => { setShowUserMenu(false); window.location.href = item.path; }}>
+                                        <div className="dropdown-item-icon">{item.icon}</div>
+                                        <span className="dropdown-item-label">{item.label}</span>
                                     </div>
                                 ))}
                             </div>
                             <div style={{ padding: '8px', borderTop: '1px solid var(--bg-border)' }}>
                                 <button
                                     onClick={handleLogout}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 10,
-                                        width: '100%', padding: '10px 12px', background: 'none', border: 'none',
-                                        color: '#f87171', fontSize: '0.875rem', fontWeight: 600,
-                                        cursor: 'pointer', textAlign: 'left', borderRadius: '8px',
-                                        transition: 'background 0.2s'
-                                    }}
-                                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(248, 113, 113, 0.1)'}
-                                    onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                    className="dropdown-logout-btn"
                                 >
                                     <LogOut size={16} /> Sign out
                                 </button>

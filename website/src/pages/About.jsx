@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 import { Award, Zap, Heart, CheckCircle, Target, Lightbulb, Globe, Users } from 'lucide-react';
 
 export default function About() {
-  const { activeSchool, theme, FILE_BASE } = useSchool();
+  const { activeSchool, theme, FILE_BASE, FILE_BASE_NEW } = useSchool();
 
-  const aboutImage = theme?.about_image 
-    ? resolveImagePath(theme.about_image, FILE_BASE) 
+  const aboutImage = theme?.about_image
+    ? resolveImagePath(theme.about_image, FILE_BASE_NEW)
     : DUMMY_DATA.aboutImage;
 
   const fadeInUp = {
@@ -72,7 +72,7 @@ export default function About() {
               ))}
             </div>
           </motion.div>
-          
+
           <motion.div {...fadeInUp} transition={{ delay: 0.2 }} className="relative">
             <img src={aboutImage} className="rounded-3xl shadow-2xl relative z-10 w-full" alt="School" />
             <div className="absolute -bottom-8 -left-8 w-56 h-56 school-gradient rounded-3xl opacity-10 z-0"></div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
     ArrowUpCircle, Search, CheckCircle, AlertTriangle, Users, ChevronRight,
-    Calendar, School, Layers, RefreshCw, Info
+    Calendar, School, Layers, RefreshCw, Info, Edit2
 } from 'lucide-react';
 import { promotionService } from '../api/services';
 import Modal from '../components/Modal';
@@ -70,6 +70,9 @@ const PromoteStudents: React.FC = () => {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
     const [loadingStudents, setLoadingStudents] = useState(false);
+
+    // Roll Numbers for promotion
+    const [rollNumbers, setRollNumbers] = useState<Record<number, string>>({});
 
     // Promotion
     const [promoting, setPromoting] = useState(false);
@@ -150,8 +153,15 @@ const PromoteStudents: React.FC = () => {
                 section_id: fromSection,
                 academic_year_id: fromSession,
             });
-            setStudents(res.data?.data ?? []);
-            if ((res.data?.data ?? []).length === 0) {
+            const studentData = res.data?.data ?? [];
+            setStudents(studentData);
+            // Pre-fill roll numbers from current data
+            const initialRolls: Record<number, string> = {};
+            studentData.forEach((s: Student) => {
+                initialRolls[s.id] = s.roll_number || '';
+            });
+            setRollNumbers(initialRolls);
+            if (studentData.length === 0) {
                 toast('No students found for this selection', { icon: '📭' });
             }
         } catch (err: any) {
@@ -201,6 +211,9 @@ const PromoteStudents: React.FC = () => {
                 to_academic_year_id: Number(toSession),
                 to_class_id: Number(toClass),
                 to_section_id: Number(toSection),
+                roll_numbers: Object.fromEntries(
+                    Array.from(selectedIds).map(id => [id, rollNumbers[id] || ''])
+                ),
             });
             const result = res.data;
             setPromotionResult(result);
@@ -481,19 +494,25 @@ const PromoteStudents: React.FC = () => {
                                     <th>Student Name</th>
                                     <th>Father's Name</th>
                                     <th>Roll No</th>
+                                    <th style={{ minWidth: 110 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <Edit2 size={13} style={{ color: 'var(--success)' }} />
+                                            New Roll No
+                                        </div>
+                                    </th>
                                     <th>Session</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {loadingStudents ? (
                                     <tr>
-                                        <td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>
+                                        <td colSpan={8} style={{ textAlign: 'center', padding: 40 }}>
                                             <div className="spinner" style={{ margin: 'auto' }} />
                                         </td>
                                     </tr>
                                 ) : filteredStudents.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7}>
+                                        <td colSpan={8}>
                                             <div className="empty-state">
                                                 <Users size={36} />
                                                 <p>No students found</p>
@@ -540,6 +559,29 @@ const PromoteStudents: React.FC = () => {
                                                 </td>
                                                 <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{s.father_name || '—'}</td>
                                                 <td style={{ fontSize: '0.85rem' }}>{s.roll_number || '—'}</td>
+                                                <td onClick={e => e.stopPropagation()}>
+                                                    <input
+                                                        type="text"
+                                                        value={rollNumbers[s.id] ?? ''}
+                                                        onChange={e => setRollNumbers(prev => ({ ...prev, [s.id]: e.target.value }))}
+                                                        placeholder="—"
+                                                        style={{
+                                                            width: 80,
+                                                            padding: '5px 8px',
+                                                            fontSize: '0.84rem',
+                                                            fontWeight: 600,
+                                                            border: '1.5px solid var(--bg-border)',
+                                                            borderRadius: 8,
+                                                            background: 'var(--bg-elevated)',
+                                                            color: 'var(--text-primary)',
+                                                            textAlign: 'center',
+                                                            outline: 'none',
+                                                            transition: 'border-color 0.2s',
+                                                        }}
+                                                        onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+                                                        onBlur={e => e.target.style.borderColor = 'var(--bg-border)'}
+                                                    />
+                                                </td>
                                                 <td>
                                                     <span className="badge badge-primary" style={{ fontSize: '0.72rem' }}>
                                                         {s.session_name || getSessionLabel(fromSession)}

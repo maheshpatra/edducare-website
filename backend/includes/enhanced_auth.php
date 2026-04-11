@@ -3,16 +3,19 @@ require_once __DIR__ . '/jwt.php';
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 
-class EnhancedAuth {
+class EnhancedAuth
+{
     private $db;
     private $conn;
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->db = new Database();
         $this->conn = $this->db->getConnection();
     }
 
-    public function login($username, $password, $school_code = null, $user_type = 'user') {
+    public function login($username, $password, $school_code = null, $user_type = 'user')
+    {
         try {
             if ($user_type === 'student') {
                 return $this->loginStudent($username, $password, $school_code);
@@ -24,7 +27,8 @@ class EnhancedAuth {
         }
     }
 
-    private function loginUser($username, $password, $school_code) {
+    private function loginUser($username, $password, $school_code)
+    {
         $query = "SELECT u.*, ur.name as role_name, ur.permissions, s.name as school_name, s.is_active as school_active, s.is_blocked as school_blocked, s.package_expires_at
                  FROM users u 
                  JOIN user_roles ur ON u.role_id = ur.id 
@@ -61,7 +65,7 @@ class EnhancedAuth {
 
         // Generate tokens
         $tokens = $this->generateTokens($user['id'], 'user');
-        
+
         // Update last login
         $this->updateLastLogin($user['id'], 'user');
 
@@ -86,7 +90,8 @@ class EnhancedAuth {
         ];
     }
 
-    private function loginStudent($username, $password, $school_code) {
+    private function loginStudent($username, $password, $school_code)
+    {
         if (!$school_code) {
             return ['success' => false, 'message' => 'School code is required for student login'];
         }
@@ -119,7 +124,7 @@ class EnhancedAuth {
 
         // Generate tokens
         $tokens = $this->generateTokens($student['id'], 'student');
-        
+
         // Update last login
         $this->updateLastLogin($student['id'], 'student');
 
@@ -147,7 +152,8 @@ class EnhancedAuth {
         ];
     }
 
-    public function generateTokens($userId, $userType) {
+    public function generateTokens($userId, $userType)
+    {
         $accessPayload = [
             'user_id' => $userId,
             'user_type' => $userType,
@@ -178,12 +184,13 @@ class EnhancedAuth {
         ];
     }
 
-    private function storeToken($userId, $userType, $token, $type, $expiresAt) {
+    private function storeToken($userId, $userType, $token, $type, $expiresAt)
+    {
         $userIdField = $userType === 'student' ? 'student_id' : 'user_id';
-        
+
         $query = "INSERT INTO auth_tokens ({$userIdField}, user_type, token, type, expires_at) 
                  VALUES (:user_id, :user_type, :token, :type, FROM_UNIXTIME(:expires_at))";
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':user_id', $userId);
         $stmt->bindParam(':user_type', $userType);
@@ -193,10 +200,11 @@ class EnhancedAuth {
         $stmt->execute();
     }
 
-    public function validateToken($token) {
+    public function validateToken($token)
+    {
         try {
             $decoded = JWT::decode($token, JWT_SECRET);
-            
+
             // Check if token exists and is not revoked
             $query = "SELECT * FROM auth_tokens WHERE token = :token AND is_revoked = 0 AND expires_at > NOW()";
             $stmt = $this->conn->prepare($query);
@@ -213,7 +221,8 @@ class EnhancedAuth {
         }
     }
 
-    public function getCurrentUser($token) {
+    public function getCurrentUser($token)
+    {
         $decoded = $this->validateToken($token);
         if (!$decoded) {
             return false;
@@ -226,13 +235,14 @@ class EnhancedAuth {
         }
     }
 
-    private function getCurrentRegularUser($userId) {
+    private function getCurrentRegularUser($userId)
+    {
         $query = "SELECT u.*, ur.name as role_name, ur.permissions, s.name as school_name 
                  FROM users u 
                  JOIN user_roles ur ON u.role_id = ur.id 
                  LEFT JOIN schools s ON u.school_id = s.id 
                  WHERE u.id = :user_id AND u.is_active = 1";
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':user_id', $userId);
         $stmt->execute();
@@ -246,12 +256,13 @@ class EnhancedAuth {
         return $user;
     }
 
-    private function getCurrentStudent($studentId) {
+    private function getCurrentStudent($studentId)
+    {
         $query = "SELECT s.*, sc.name as school_name 
                  FROM students s 
                  JOIN schools sc ON s.school_id = sc.id 
                  WHERE s.id = :student_id AND s.is_active = 1";
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':student_id', $studentId);
         $stmt->execute();
@@ -266,21 +277,24 @@ class EnhancedAuth {
         return $student;
     }
 
-    public function logout($token) {
+    public function logout($token)
+    {
         $query = "UPDATE auth_tokens SET is_revoked = 1 WHERE token = :token";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':token', $token);
         return $stmt->execute();
     }
 
-    public function hasPermission($user, $permission) {
+    public function hasPermission($user, $permission)
+    {
         if (in_array('all', $user['permissions'])) {
             return true;
         }
         return in_array($permission, $user['permissions']);
     }
 
-    private function updateLastLogin($userId, $userType) {
+    private function updateLastLogin($userId, $userType)
+    {
         $table = $userType === 'student' ? 'students' : 'users';
         $query = "UPDATE {$table} SET last_login = NOW() WHERE id = :user_id";
         $stmt = $this->conn->prepare($query);
@@ -288,10 +302,11 @@ class EnhancedAuth {
         $stmt->execute();
     }
 
-    private function logActivity($userId, $studentId, $userType, $schoolId, $action, $entityType, $entityId) {
+    private function logActivity($userId, $studentId, $userType, $schoolId, $action, $entityType, $entityId)
+    {
         $query = "INSERT INTO activity_logs (user_id, student_id, user_type, school_id, action, entity_type, entity_id, ip_address, user_agent) 
                  VALUES (:user_id, :student_id, :user_type, :school_id, :action, :entity_type, :entity_id, :ip_address, :user_agent)";
-        
+
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':user_id', $userId);
         $stmt->bindParam(':student_id', $studentId);
@@ -301,7 +316,7 @@ class EnhancedAuth {
         $stmt->bindParam(':entity_type', $entityType);
         $stmt->bindParam(':entity_id', $entityId);
         $stmt->bindParam(':ip_address', $_SERVER['REMOTE_ADDR']);
-        $stmt->bindParam(':user_agent', $_SERVER['HTTP_USER_AGENT'] );
+        $stmt->bindParam(':user_agent', $_SERVER['HTTP_USER_AGENT']);
         $stmt->execute();
     }
 }

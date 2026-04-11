@@ -86,9 +86,8 @@ export default function Academics() {
                       <td className="px-8 py-5 text-slate-600 font-mono">{cls.room_number || 'TBA'}</td>
                       <td className="px-8 py-5 text-slate-600 text-center">{cls.capacity}</td>
                       <td className="px-8 py-5 text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                          cls.current_students >= cls.capacity ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${cls.current_students >= cls.capacity ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
+                          }`}>
                           {cls.current_students >= cls.capacity ? 'Full' : 'Open'}
                         </span>
                       </td>

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import {
     Globe, Palette, Image as ImageIcon, BarChart3, Layout, Upload, Save, Trash2, Plus,
-    Eye, RefreshCw, Monitor, Mail, FileText, XCircle, CreditCard, Shield, Settings2, Zap
+    Eye, RefreshCw, Monitor, Mail, FileText, CreditCard, Shield, Zap
 } from 'lucide-react';
 
 
@@ -53,7 +53,7 @@ const FONTS = [
 ];
 
 const WebsiteSettings: React.FC = () => {
-    const { user } = useAuth();
+    useAuth(); // ensure authenticated
     const [activeTab, setActiveTab] = useState<'theme' | 'content' | 'gallery' | 'stats' | 'admissions' | 'email' | 'payments'>('theme');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -96,7 +96,7 @@ const WebsiteSettings: React.FC = () => {
 
     const [isAdmissionFeeEnabled, setIsAdmissionFeeEnabled] = useState(false);
     const [admissionFeeAmount, setAdmissionFeeAmount] = useState(0);
-    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [_qrCode, setQrCode] = useState<string | null>(null);
     const [qrFile, setQrFile] = useState<File | null>(null);
     const qrFileRef = useRef<HTMLInputElement>(null);
 
@@ -349,14 +349,29 @@ const WebsiteSettings: React.FC = () => {
         setSaving(false);
     };
 
-    const tabs = [
-        { id: 'theme' as const, label: 'Theme & Template', icon: Palette },
-        { id: 'content' as const, label: 'Content', icon: Layout },
-        { id: 'gallery' as const, label: 'Gallery', icon: ImageIcon },
-        { id: 'stats' as const, label: 'Statistics', icon: BarChart3 },
-        { id: 'admissions' as const, label: 'Admission Form', icon: FileText },
-        { id: 'payments' as const, label: 'Payment Methods', icon: CreditCard },
-        { id: 'email' as const, label: 'Email Setup', icon: Mail },
+    const navSections = [
+        {
+            label: 'Design',
+            items: [
+                { id: 'theme' as const, label: 'Theme & Template', icon: Palette },
+                { id: 'content' as const, label: 'Content', icon: Layout },
+            ],
+        },
+        {
+            label: 'Media',
+            items: [
+                { id: 'gallery' as const, label: 'Gallery', icon: ImageIcon },
+                { id: 'stats' as const, label: 'Statistics', icon: BarChart3 },
+            ],
+        },
+        {
+            label: 'Configuration',
+            items: [
+                { id: 'admissions' as const, label: 'Admission Form', icon: FileText },
+                { id: 'payments' as const, label: 'Payment Methods', icon: CreditCard },
+                { id: 'email' as const, label: 'Email Setup', icon: Mail },
+            ],
+        },
     ];
 
     const FILE_BASE = 'https://edducare.finafid.org/uploads';
@@ -379,7 +394,7 @@ const WebsiteSettings: React.FC = () => {
             {/* Header */}
             <div className="card" style={{ padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-sm)', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 'var(--radius-sm)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Globe size={24} color="white" />
                     </div>
                     <div>
@@ -393,22 +408,36 @@ const WebsiteSettings: React.FC = () => {
                 </a>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: 8, background: 'var(--bg-surface)', padding: 6, borderRadius: 'var(--radius-sm)', border: '1px solid var(--bg-border)' }}>
-                {tabs.map(tab => (
-                    <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                        style={{
-                            flex: 1, padding: '12px 16px', borderRadius: 'calc(var(--radius-sm) - 4px)', border: 'none', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                            fontWeight: 600, fontSize: '0.85rem', transition: 'all 0.2s',
-                            background: activeTab === tab.id ? 'var(--bg-elevated)' : 'transparent',
-                            color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-muted)',
-                            boxShadow: activeTab === tab.id ? 'var(--shadow-sm)' : 'none',
-                        }}>
-                        <tab.icon size={16} /> {tab.label}
-                    </button>
-                ))}
-            </div>
+            {/* Sidebar + Content Layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: '230px 1fr', gap: 24 }}>
+                {/* Sidebar Navigation */}
+                <div className="card" style={{ padding: 12, height: 'fit-content', position: 'sticky', top: 24 }}>
+                    {navSections.map((section, sIdx) => (
+                        <div key={section.label}>
+                            <div style={{
+                                padding: '10px 12px 4px', fontSize: '0.65rem', fontWeight: 800,
+                                textTransform: 'uppercase', letterSpacing: '1.2px', color: 'var(--text-muted)',
+                                ...(sIdx > 0 ? { marginTop: 8, borderTop: '1px solid var(--bg-border)', paddingTop: 14 } : {}),
+                            }}>
+                                {section.label}
+                            </div>
+                            {section.items.map(item => (
+                                <div
+                                    key={item.id}
+                                    className={`nav-item ${activeTab === item.id ? 'active' : ''}`}
+                                    style={{ margin: '2px 0' }}
+                                    onClick={() => setActiveTab(item.id)}
+                                >
+                                    <div className="nav-item-icon"><item.icon size={16} /></div>
+                                    <span className="nav-item-label">{item.label}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Content Area */}
+                <div>
 
             {/* ═══ THEME TAB ═══ */}
             {activeTab === 'theme' && (
@@ -450,19 +479,23 @@ const WebsiteSettings: React.FC = () => {
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Primary Color</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <input type="color" value={theme.primary_color} onChange={e => setTheme(p => ({ ...p, primary_color: e.target.value }))}
-                                        style={{ width: 50, height: 40, border: 'none', borderRadius: 8, cursor: 'pointer' }} />
+                                    <div style={{ position: 'relative', width: 50, height: 44, borderRadius: 12, border: '1.5px solid var(--bg-border)', overflow: 'hidden' }}>
+                                        <input type="color" value={theme.primary_color} onChange={e => setTheme(p => ({ ...p, primary_color: e.target.value }))}
+                                            style={{ position: 'absolute', top: -10, left: -10, width: 70, height: 70, border: 'none', cursor: 'pointer', background: 'none' }} />
+                                    </div>
                                     <input type="text" className="form-input" value={theme.primary_color} onChange={e => setTheme(p => ({ ...p, primary_color: e.target.value }))}
-                                        style={{ flex: 1, fontFamily: 'monospace' }} />
+                                        style={{ flex: 1, fontFamily: 'monospace', textTransform: 'uppercase' }} />
                                 </div>
                             </div>
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Secondary Color</label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <input type="color" value={theme.secondary_color} onChange={e => setTheme(p => ({ ...p, secondary_color: e.target.value }))}
-                                        style={{ width: 50, height: 40, border: 'none', borderRadius: 8, cursor: 'pointer' }} />
+                                    <div style={{ position: 'relative', width: 50, height: 44, borderRadius: 12, border: '1.5px solid var(--bg-border)', overflow: 'hidden' }}>
+                                        <input type="color" value={theme.secondary_color} onChange={e => setTheme(p => ({ ...p, secondary_color: e.target.value }))}
+                                            style={{ position: 'absolute', top: -10, left: -10, width: 70, height: 70, border: 'none', cursor: 'pointer', background: 'none' }} />
+                                    </div>
                                     <input type="text" className="form-input" value={theme.secondary_color} onChange={e => setTheme(p => ({ ...p, secondary_color: e.target.value }))}
-                                        style={{ flex: 1, fontFamily: 'monospace' }} />
+                                        style={{ flex: 1, fontFamily: 'monospace', textTransform: 'uppercase' }} />
                                 </div>
                             </div>
                         </div>
@@ -476,7 +509,7 @@ const WebsiteSettings: React.FC = () => {
                     <div className="card" style={{ padding: 28 }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 20, color: 'var(--text-primary)' }}>Typography</h3>
                         <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Font Family</label>
-                        <select className="form-input" value={theme.font_family} onChange={e => setTheme(p => ({ ...p, font_family: e.target.value }))}>
+                        <select className="form-select" value={theme.font_family} onChange={e => setTheme(p => ({ ...p, font_family: e.target.value }))}>
                             {FONTS.map(f => <option key={f} value={f} style={{ fontFamily: f }}>{f.split(',')[0]}</option>)}
                         </select>
                     </div>
@@ -554,10 +587,16 @@ const WebsiteSettings: React.FC = () => {
                     {/* Upload New */}
                     <div className="card" style={{ padding: 28 }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 20, color: 'var(--text-primary)' }}>Add New Image</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, alignItems: 'end' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 16, alignItems: 'end' }}>
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Image</label>
-                                <input type="file" ref={galleryFileRef} accept="image/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} className="form-input" style={{ padding: 8 }} />
+                                <div style={{ position: 'relative' }}>
+                                    <input type="file" ref={galleryFileRef} accept="image/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} 
+                                        style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 10 }} />
+                                    <div className="form-input" style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                                        <Upload size={14} /> {galleryFile ? galleryFile.name : 'Choose file...'}
+                                    </div>
+                                </div>
                             </div>
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Caption</label>
@@ -565,12 +604,12 @@ const WebsiteSettings: React.FC = () => {
                             </div>
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Category</label>
-                                <select className="form-input" value={newCategory} onChange={e => setNewCategory(e.target.value)}>
+                                <select className="form-select" value={newCategory} onChange={e => setNewCategory(e.target.value)}>
                                     {['General', 'Academic', 'Sports', 'Events', 'Campus Life', 'Cultural'].map(c => <option key={c}>{c}</option>)}
                                 </select>
                             </div>
-                            <button onClick={handleAddGalleryImage} disabled={saving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
-                                <Plus size={16} /> Upload
+                            <button onClick={handleAddGalleryImage} disabled={saving} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 24px' }}>
+                                {saving ? <RefreshCw size={16} className="spin" /> : <Plus size={16} />} Upload
                             </button>
                         </div>
                     </div>
@@ -612,7 +651,7 @@ const WebsiteSettings: React.FC = () => {
                     {/* Add New Stat */}
                     <div className="card" style={{ padding: 28 }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 20, color: 'var(--text-primary)' }}>Add Statistic</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, alignItems: 'end' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 16, alignItems: 'end' }}>
                             <div>
                                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Label</label>
                                 <input className="form-input" value={newStat.label} onChange={e => setNewStat(p => ({ ...p, label: e.target.value }))} placeholder="e.g. Students" />
@@ -625,7 +664,7 @@ const WebsiteSettings: React.FC = () => {
                                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Icon Name</label>
                                 <input className="form-input" value={newStat.icon} onChange={e => setNewStat(p => ({ ...p, icon: e.target.value }))} placeholder="e.g. Users" />
                             </div>
-                            <button onClick={handleAddStat} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                            <button onClick={handleAddStat} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8, height: 46, padding: '0 24px' }}>
                                 <Plus size={16} /> Add Stat
                             </button>
                         </div>
@@ -704,10 +743,12 @@ const WebsiteSettings: React.FC = () => {
                                             </label>
                                         </div>
                                         <div style={{ background: 'var(--bg-surface)', padding: '20px 24px', borderTop: '1px solid var(--bg-border)', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <input type="checkbox" checked={config.required} disabled={!config.enabled}
-                                                onChange={e => setAdmissionFields(p => ({ ...p, [key]: { ...p[key], required: e.target.checked } }))} 
-                                                style={{ width: 18, height: 18, cursor: config.enabled ? 'pointer' : 'not-allowed', opacity: config.enabled ? 1 : 0.3 }}
-                                            />
+                                            <label className="switch" style={{ opacity: config.enabled ? 1 : 0.4 }}>
+                                                <input type="checkbox" checked={config.required} disabled={!config.enabled}
+                                                    onChange={e => setAdmissionFields(p => ({ ...p, [key]: { ...p[key], required: e.target.checked } }))} 
+                                                />
+                                                <span className="slider round"></span>
+                                            </label>
                                         </div>
                                     </React.Fragment>
                                 ))}
@@ -740,14 +781,18 @@ const WebsiteSettings: React.FC = () => {
                                 </div>
                                 
                                 <div style={{ opacity: isAdmissionFeeEnabled ? 1 : 0.5, pointerEvents: isAdmissionFeeEnabled ? 'auto' : 'none', transition: 'all 0.3s' }}>
-                                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 8 }}>Admission Fee Amount (₹)</label>
-                                    <input 
-                                        type="number" 
-                                        className="form-input" 
-                                        value={admissionFeeAmount} 
-                                        onChange={e => setAdmissionFeeAmount(parseFloat(e.target.value) || 0)} 
-                                        placeholder="Enter amount"
-                                    />
+                                    <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 12 }}>Admission Fee Amount (₹)</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <div style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontWeight: 700, color: 'var(--text-muted)' }}>₹</div>
+                                        <input 
+                                            type="number" 
+                                            className="form-input" 
+                                            value={admissionFeeAmount} 
+                                            onChange={e => setAdmissionFeeAmount(parseFloat(e.target.value) || 0)} 
+                                            placeholder="Enter amount"
+                                            style={{ paddingLeft: 34, fontSize: '1.1rem', fontWeight: 700 }}
+                                        />
+                                    </div>
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 8 }}>This amount will be shown to parents during the admission process.</p>
                                 </div>
                             </div>
@@ -868,52 +913,75 @@ const WebsiteSettings: React.FC = () => {
                             </div>
                         </div>
 
-                        {paymentGateways['razorpay']?.is_active && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                                <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                        <Shield size={18} className="text-accent" />
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Environment Mode</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                            {paymentGateways['razorpay']?.is_active && (
+                                <>
+                                    <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                            <Shield size={18} className="text-accent" />
+                                            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Environment Mode</h4>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 12 }}>
+                                            {['sandbox', 'live'].map(mode => (
+                                                <button key={mode} 
+                                                    onClick={() => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, mode: mode } }))}
+                                                    style={{ 
+                                                        flex: 1, padding: '12px', borderRadius: 12, border: '2px solid', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', transition: 'all 0.2s',
+                                                        borderColor: paymentGateways['razorpay'].mode === mode ? 'var(--accent)' : 'var(--bg-border)',
+                                                        background: paymentGateways['razorpay'].mode === mode ? 'var(--accent-light)' : 'transparent',
+                                                        color: paymentGateways['razorpay'].mode === mode ? 'var(--accent)' : 'var(--text-muted)'
+                                                    }}
+                                                >
+                                                    {mode}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: 12 }}>
-                                        {['sandbox', 'live'].map(mode => (
-                                            <button key={mode} 
-                                                onClick={() => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, mode: mode } }))}
-                                                style={{ 
-                                                    flex: 1, padding: '12px', borderRadius: 12, border: '2px solid', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', transition: 'all 0.2s',
-                                                    borderColor: paymentGateways['razorpay'].mode === mode ? 'var(--accent)' : 'var(--bg-border)',
-                                                    background: paymentGateways['razorpay'].mode === mode ? 'var(--accent-light)' : 'transparent',
-                                                    color: paymentGateways['razorpay'].mode === mode ? 'var(--accent)' : 'var(--text-muted)'
-                                                }}
-                                            >
-                                                {mode}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-                                    <div className="form-group-fancy">
-                                        <label>Key ID</label>
-                                        <input className="form-input-fancy" value={paymentGateways['razorpay'].config?.key_id || ''} 
-                                            onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, key_id: e.target.value } } }))} 
-                                            placeholder="rzp_test_..." 
-                                        />
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                                        {paymentGateways['razorpay'].mode === 'sandbox' ? (
+                                            <>
+                                                <div className="form-group-fancy">
+                                                    <label>Sandbox Key ID</label>
+                                                    <input className="form-input-fancy" value={paymentGateways['razorpay'].config?.sandbox_key_id || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, sandbox_key_id: e.target.value } } }))} 
+                                                        placeholder="rzp_test_..." 
+                                                    />
+                                                </div>
+                                                <div className="form-group-fancy">
+                                                    <label>Sandbox Key Secret</label>
+                                                    <input type="password" className="form-input-fancy" value={paymentGateways['razorpay'].config?.sandbox_key_secret || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, sandbox_key_secret: e.target.value } } }))} 
+                                                        placeholder="••••••••••••" 
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="form-group-fancy">
+                                                    <label>Live Key ID</label>
+                                                    <input className="form-input-fancy" value={paymentGateways['razorpay'].config?.live_key_id || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, live_key_id: e.target.value } } }))} 
+                                                        placeholder="rzp_live_..." 
+                                                    />
+                                                </div>
+                                                <div className="form-group-fancy">
+                                                    <label>Live Key Secret</label>
+                                                    <input type="password" className="form-input-fancy" value={paymentGateways['razorpay'].config?.live_key_secret || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, live_key_secret: e.target.value } } }))} 
+                                                        placeholder="••••••••••••" 
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                    <div className="form-group-fancy">
-                                        <label>Key Secret</label>
-                                        <input type="password" className="form-input-fancy" value={paymentGateways['razorpay'].config?.key_secret || ''} 
-                                            onChange={e => setPaymentGateways(p => ({ ...p, razorpay: { ...p.razorpay, config: { ...p.razorpay.config, key_secret: e.target.value } } }))} 
-                                            placeholder="••••••••••••" 
-                                        />
-                                    </div>
-                                </div>
+                                </>
+                            )}
 
-                                <button onClick={() => handleSaveGateway('razorpay')} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update Razorpay
-                                </button>
-                            </div>
-                        )}
+                            <button onClick={() => handleSaveGateway('razorpay')} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update Razorpay
+                            </button>
+                        </div>
                     </div>
 
                     {/* PayU Section */}
@@ -936,52 +1004,75 @@ const WebsiteSettings: React.FC = () => {
                             </div>
                         </div>
 
-                        {paymentGateways['payu']?.is_active && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                                <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                        <Shield size={18} className="text-accent" />
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Environment Mode</h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                            {paymentGateways['payu']?.is_active && (
+                                <>
+                                    <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                            <Shield size={18} className="text-accent" />
+                                            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Environment Mode</h4>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 12 }}>
+                                            {['sandbox', 'live'].map(mode => (
+                                                <button key={mode} 
+                                                    onClick={() => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, mode: mode } }))}
+                                                    style={{ 
+                                                        flex: 1, padding: '12px', borderRadius: 12, border: '2px solid', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', transition: 'all 0.2s',
+                                                        borderColor: paymentGateways['payu'].mode === mode ? 'var(--accent)' : 'var(--bg-border)',
+                                                        background: paymentGateways['payu'].mode === mode ? 'var(--accent-light)' : 'transparent',
+                                                        color: paymentGateways['payu'].mode === mode ? 'var(--accent)' : 'var(--text-muted)'
+                                                    }}
+                                                >
+                                                    {mode}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: 12 }}>
-                                        {['sandbox', 'live'].map(mode => (
-                                            <button key={mode} 
-                                                onClick={() => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, mode: mode } }))}
-                                                style={{ 
-                                                    flex: 1, padding: '12px', borderRadius: 12, border: '2px solid', fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', transition: 'all 0.2s',
-                                                    borderColor: paymentGateways['payu'].mode === mode ? 'var(--accent)' : 'var(--bg-border)',
-                                                    background: paymentGateways['payu'].mode === mode ? 'var(--accent-light)' : 'transparent',
-                                                    color: paymentGateways['payu'].mode === mode ? 'var(--accent)' : 'var(--text-muted)'
-                                                }}
-                                            >
-                                                {mode}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
-                                    <div className="form-group-fancy">
-                                        <label>Merchant Key</label>
-                                        <input className="form-input-fancy" value={paymentGateways['payu'].config?.merchant_key || ''} 
-                                            onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, merchant_key: e.target.value } } }))} 
-                                            placeholder="PayU Merchant Key" 
-                                        />
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+                                        {paymentGateways['payu'].mode === 'sandbox' ? (
+                                            <>
+                                                <div className="form-group-fancy">
+                                                    <label>Sandbox Merchant Key</label>
+                                                    <input className="form-input-fancy" value={paymentGateways['payu'].config?.sandbox_key || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, sandbox_key: e.target.value } } }))} 
+                                                        placeholder="Sandbox Key" 
+                                                    />
+                                                </div>
+                                                <div className="form-group-fancy">
+                                                    <label>Sandbox Merchant Salt</label>
+                                                    <input type="password" className="form-input-fancy" value={paymentGateways['payu'].config?.sandbox_salt || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, sandbox_salt: e.target.value } } }))} 
+                                                        placeholder="••••••••••••" 
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="form-group-fancy">
+                                                    <label>Live Merchant Key</label>
+                                                    <input className="form-input-fancy" value={paymentGateways['payu'].config?.live_key || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, live_key: e.target.value } } }))} 
+                                                        placeholder="Live Merchant Key" 
+                                                    />
+                                                </div>
+                                                <div className="form-group-fancy">
+                                                    <label>Live Merchant Salt</label>
+                                                    <input type="password" className="form-input-fancy" value={paymentGateways['payu'].config?.live_salt || ''} 
+                                                        onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, live_salt: e.target.value } } }))} 
+                                                        placeholder="••••••••••••" 
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                    <div className="form-group-fancy">
-                                        <label>Merchant Salt</label>
-                                        <input type="password" className="form-input-fancy" value={paymentGateways['payu'].config?.merchant_salt || ''} 
-                                            onChange={e => setPaymentGateways(p => ({ ...p, payu: { ...p.payu, config: { ...p.payu.config, merchant_salt: e.target.value } } }))} 
-                                            placeholder="••••••••••••" 
-                                        />
-                                    </div>
-                                </div>
+                                </>
+                            )}
 
-                                <button onClick={() => handleSaveGateway('payu')} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update PayU
-                                </button>
-                            </div>
-                        )}
+                            <button onClick={() => handleSaveGateway('payu')} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update PayU
+                            </button>
+                        </div>
                     </div>
 
                     {/* UPI QR Section */}
@@ -1004,50 +1095,54 @@ const WebsiteSettings: React.FC = () => {
                             </div>
                         </div>
 
-                        {paymentGateways['upi_qr']?.is_active && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-                                <div style={{ background: 'var(--bg-elevated)', padding: '16px 24px', borderRadius: 20, border: '1px solid var(--bg-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <Shield size={18} className="text-accent" />
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Payment Environment</h4>
-                                    </div>
-                                    <span style={{ padding: '6px 14px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>Live Payment Only</span>
-                                </div>
-
-                                <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
-                                    <label style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: 16 }}>Gateway Settings</label>
-                                    <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            {paymentGateways['upi_qr'].config?.qr_path || qrFile ? (
-                                                <img 
-                                                    src={qrFile ? URL.createObjectURL(qrFile) : resolveImg(paymentGateways['upi_qr'].config.qr_path)} 
-                                                    alt="UPI QR" 
-                                                    style={{ width: 120, height: 120, objectFit: 'contain', background: 'white', borderRadius: 12, padding: 8, border: '1px solid var(--bg-border)' }} 
-                                                />
-                                            ) : (
-                                                <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface)', border: '2px dashed var(--bg-border)', borderRadius: 12 }}>
-                                                    <ImageIcon size={32} style={{ opacity: 0.2 }} />
-                                                </div>
-                                            )}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                            {paymentGateways['upi_qr']?.is_active && (
+                                <>
+                                    <div style={{ background: 'var(--bg-elevated)', padding: '16px 24px', borderRadius: 20, border: '1px solid var(--bg-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            <Shield size={18} className="text-accent" />
+                                            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, margin:0 }}>Payment Environment</h4>
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <input type="file" ref={qrFileRef} accept="image/*" style={{ display: 'none' }} onChange={e => setQrFile(e.target.files?.[0] || null)} />
-                                            <button onClick={() => qrFileRef.current?.click()} className="btn btn-secondary" style={{ marginBottom: 12 }}>
-                                                <Upload size={16} style={{ marginRight: 8 }} /> {qrFile ? 'Change QR' : 'Upload QR Code'}
-                                            </button>
-                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>This QR will be shown to users. They will need to upload proof of payment (UTR number).</p>
+                                        <span style={{ padding: '6px 14px', borderRadius: 10, background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>Live Payment Only</span>
+                                    </div>
+
+                                    <div style={{ background: 'var(--bg-elevated)', padding: 24, borderRadius: 20, border: '1px solid var(--bg-border)' }}>
+                                        <label style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: 16 }}>Gateway Settings</label>
+                                        <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+                                            <div style={{ position: 'relative' }}>
+                                                {paymentGateways['upi_qr'].config?.qr_path || qrFile ? (
+                                                    <img 
+                                                        src={qrFile ? URL.createObjectURL(qrFile) : resolveImg(paymentGateways['upi_qr'].config.qr_path)} 
+                                                        alt="UPI QR" 
+                                                        style={{ width: 120, height: 120, objectFit: 'contain', background: 'white', borderRadius: 12, padding: 8, border: '1px solid var(--bg-border)' }} 
+                                                    />
+                                                ) : (
+                                                    <div style={{ width: 120, height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-surface)', border: '2px dashed var(--bg-border)', borderRadius: 12 }}>
+                                                        <ImageIcon size={32} style={{ opacity: 0.2 }} />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <input type="file" ref={qrFileRef} accept="image/*" style={{ display: 'none' }} onChange={e => setQrFile(e.target.files?.[0] || null)} />
+                                                <button onClick={() => qrFileRef.current?.click()} className="btn btn-secondary" style={{ marginBottom: 12 }}>
+                                                    <Upload size={16} style={{ marginRight: 8 }} /> {qrFile ? 'Change QR' : 'Upload QR Code'}
+                                                </button>
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0 }}>This QR will be shown to users. They will need to upload proof of payment (UTR number).</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </>
+                            )}
 
-                                <button onClick={() => handleSaveGateway('upi_qr', qrFile || undefined)} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update UPI Settings
-                                </button>
-                            </div>
-                        )}
+                            <button onClick={() => handleSaveGateway('upi_qr', qrFile || undefined)} disabled={saving} className="btn btn-primary" style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                {saving ? <RefreshCw size={16} className="spin" /> : <Save size={16} />} Update UPI Settings
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
+                </div>{/* end Content Area */}
+            </div>{/* end Grid */}
         </div>
     );
 };

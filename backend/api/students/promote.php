@@ -242,6 +242,7 @@ function handlePromoteStudents($db, $user) {
     $toAcademicYearId    = $input['to_academic_year_id'] ?? null;
     $toClassId           = $input['to_class_id'] ?? null;
     $toSectionId         = $input['to_section_id'] ?? null;
+    $rollNumbers         = $input['roll_numbers'] ?? []; // { student_id: "new_roll_number" }
 
     // Validate required fields
     if (empty($studentIds) || !$toAcademicYearId || !$toClassId || !$toSectionId) {
@@ -324,28 +325,36 @@ function handlePromoteStudents($db, $user) {
             $checkStmt->execute();
             $existingEnrollment = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
+            // Determine new roll number for this student
+            $newRollNumber = isset($rollNumbers[$studentId]) && $rollNumbers[$studentId] !== '' 
+                ? $rollNumbers[$studentId] 
+                : null;
+
             if ($existingEnrollment) {
                 // Student already enrolled in target session — update their enrollment
                 $updateQuery = "UPDATE student_enrollments
                                 SET class_id = :class_id,
                                     section_id = :section_id,
+                                    roll_number = :roll_number,
                                     enrollment_date = CURDATE()
                                 WHERE id = :id";
                 $updateStmt = $db->prepare($updateQuery);
                 $updateStmt->bindValue(':class_id', $toClassId);
                 $updateStmt->bindValue(':section_id', $toSectionId);
+                $updateStmt->bindValue(':roll_number', $newRollNumber);
                 $updateStmt->bindValue(':id', $existingEnrollment['id']);
                 $updateStmt->execute();
             } else {
                 // 2. Create new enrollment in target session/class/section
                 $insertQuery = "INSERT INTO student_enrollments
-                                (student_id, class_id, section_id, academic_year_id, enrollment_date, status)
-                                VALUES (:student_id, :class_id, :section_id, :ay_id, CURDATE(), 'active')";
+                                (student_id, class_id, section_id, academic_year_id, enrollment_date, status, roll_number)
+                                VALUES (:student_id, :class_id, :section_id, :ay_id, CURDATE(), 'active', :roll_number)";
                 $insertStmt = $db->prepare($insertQuery);
                 $insertStmt->bindValue(':student_id', $studentId);
                 $insertStmt->bindValue(':class_id', $toClassId);
                 $insertStmt->bindValue(':section_id', $toSectionId);
                 $insertStmt->bindValue(':ay_id', $toAcademicYearId);
+                $insertStmt->bindValue(':roll_number', $newRollNumber);
 
                 try {
                     $insertStmt->execute();

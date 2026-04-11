@@ -33,12 +33,10 @@ try {
     }
     
     // Check if student exists and belongs to the user's school (if not super admin)
-    $checkQuery = "SELECT u.* FROM users u 
-                   JOIN user_roles ur ON u.role_id = ur.id 
-                   WHERE u.id = :student_id AND ur.name = 'student'";
+    $checkQuery = "SELECT * FROM students WHERE id = :student_id";
     
     if ($user['role'] !== 'super_admin') {
-        $checkQuery .= " AND u.school_id = :school_id";
+        $checkQuery .= " AND school_id = :school_id";
     }
     
     $checkStmt = $db->prepare($checkQuery);
@@ -57,7 +55,7 @@ try {
     $db->beginTransaction();
     
     // Soft delete - mark as inactive instead of hard delete
-    $deleteQuery = "UPDATE users SET is_active = FALSE, updated_at = NOW() WHERE id = :student_id";
+    $deleteQuery = "UPDATE students SET status = 'inactive', updated_at = NOW() WHERE id = :student_id";
     $deleteStmt = $db->prepare($deleteQuery);
     $deleteStmt->bindValue(':student_id', $studentId);
     $deleteStmt->execute();

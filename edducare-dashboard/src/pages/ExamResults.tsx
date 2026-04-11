@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Users, CheckCircle, AlertCircle, Search, ChevronLeft, ChevronRight, BarChart3, Target, Percent, Filter } from 'lucide-react';
+import { ArrowLeft, Save, Users, CheckCircle, AlertCircle, Search, ChevronLeft, ChevronRight, BarChart3, Target, Percent, Filter, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { examService, classService } from '../api/services';
+import { examService, classService, schoolService } from '../api/services';
+import { generateResultCard } from '../utils/PdfGenerator';
 
 const PAGE_SIZE = 20;
 
@@ -29,6 +30,13 @@ const ExamResults: React.FC = () => {
     const [selectedSection, setSelectedSection] = useState('');
     const [selectedExam, setSelectedExam] = useState('');
     const [loadingExams, setLoadingExams] = useState(false);
+    const [schoolInfo, setSchoolInfo] = useState<any>(null);
+
+    useEffect(() => {
+        schoolService.getProfile().then(r => {
+            if (r.data?.success) setSchoolInfo(r.data.data);
+        }).catch(() => {});
+    }, []);
 
     useEffect(() => {
         if (!examId) {
@@ -183,6 +191,37 @@ const ExamResults: React.FC = () => {
             return;
         }
         loadStudents(selectedExam, selectedClass, selectedSection);
+    };
+
+    const handleDownloadResult = (student: any) => {
+        const val = marks[student.student_id];
+        if (val === undefined || val === '') {
+            toast.error('Please enter marks before downloading result');
+            return;
+        }
+        const school = schoolInfo || { name: 'School' };
+        const obtained = Number(val);
+        const pct = (obtained / totalMarks) * 100;
+        generateResultCard(
+            { name: school.name, address: school.address, phone: school.phone, email: school.email, website: school.website, principal_name: school.principal_name },
+            {
+                student: {
+                    name: `${student.first_name} ${student.last_name}`,
+                    studentId: student.student_id?.toString() || '',
+                    rollNumber: student.roll_number?.toString(),
+                    class: exam?.class_name || '',
+                    section: exam?.section_name || '',
+                    admissionNumber: student.admission_number,
+                },
+                examName: exam?.name || exam?.exam_name || 'Exam',
+                examDate: exam?.exam_date,
+                subjects: [{ name: exam?.exam_subject || exam?.subject || 'Subject', maxMarks: totalMarks, obtainedMarks: obtained }],
+                totalMarks,
+                totalObtained: obtained,
+                percentage: pct,
+                result: obtained >= passingMarks ? 'PASS' : 'FAIL',
+            }
+        );
     };
 
     // ── Exam Selection View ──
@@ -345,6 +384,7 @@ const ExamResults: React.FC = () => {
                                 <th style={{ ...thStyle, textAlign: 'left' }}>Adm No.</th>
                                 <th style={{ ...thStyle, minWidth: 100 }}>Marks / {totalMarks}</th>
                                 <th style={thStyle}>Status</th>
+                                <th style={thStyle}>PDF</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -401,12 +441,28 @@ const ExamResults: React.FC = () => {
                                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem', fontStyle: 'italic' }}>Pending</span>
                                             )}
                                         </td>
+                                        <td style={tdStyle}>
+                                            <button
+                                                title="Download Result PDF"
+                                                onClick={() => handleDownloadResult(s)}
+                                                disabled={num === null}
+                                                style={{
+                                                    background: num !== null ? 'rgba(99,102,241,0.12)' : 'transparent',
+                                                    border: 'none', color: num !== null ? '#6366f1' : 'var(--text-muted)',
+                                                    cursor: num !== null ? 'pointer' : 'not-allowed',
+                                                    padding: 6, borderRadius: 8, display: 'inline-flex', alignItems: 'center',
+                                                    opacity: num !== null ? 1 : 0.4,
+                                                }}
+                                            >
+                                                <Download size={14} />
+                                            </button>
+                                        </td>
                                     </tr>
                                 );
                             })}
                             {paginatedStudents.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                    <td colSpan={7} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                         {searchTerm || statusFilter !== 'all' ? 'No students match your filters.' : 'No students found for this class/section.'}
                                     </td>
                                 </tr>

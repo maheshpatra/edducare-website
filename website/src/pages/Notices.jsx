@@ -44,9 +44,9 @@ export default function Notices() {
       <section className="py-24">
         <div className="max-w-4xl mx-auto px-4 space-y-8">
           {displayNotices.map((notice, i) => (
-            <motion.div 
-              key={notice.id || i} 
-              {...fadeInUp} 
+            <motion.div
+              key={notice.id || i}
+              {...fadeInUp}
               transition={{ delay: i * 0.08 }}
               className="card p-8 sm:p-10 flex flex-col md:flex-row gap-8 group"
             >
@@ -56,13 +56,12 @@ export default function Notices() {
               </div>
               <div className="flex-grow">
                 <div className="flex flex-wrap items-center gap-3 mb-3">
-                  <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase ${
-                    notice.priority === 'urgent' || notice.priority === 'high' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase ${notice.priority === 'urgent' || notice.priority === 'high' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                    }`}>
                     {notice.priority || 'Normal'}
                   </span>
                   <span className="text-slate-400 text-sm font-medium flex items-center">
-                    <Calendar className="w-4 h-4 mr-1.5" /> 
+                    <Calendar className="w-4 h-4 mr-1.5" />
                     {new Date(notice.created_at).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                   </span>
                 </div>

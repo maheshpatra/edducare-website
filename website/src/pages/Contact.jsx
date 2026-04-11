@@ -71,7 +71,7 @@ export default function Contact() {
           <motion.div {...fadeInUp} className="lg:col-span-2 space-y-6">
             <h2 className="section-title text-3xl">Let's Connect</h2>
             <p className="section-subtitle mb-8">We'd love to hear from you. Whether you have a question about admissions, curriculum, or anything else — our team is here to help.</p>
-            
+
             {contactInfo.map((item, i) => (
               <a key={i} href={item.href} className="flex items-start group p-4 rounded-2xl hover:bg-slate-50 transition-all">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 group-hover:bg-primary flex items-center justify-center flex-shrink-0 mr-4 transition-all">

@@ -45,6 +45,8 @@ function getExamResultsSchema($db) {
         'has_exam_id' => in_array('exam_id', $erColumns),
         'marks_col' => in_array('marks_obtained', $erColumns) ? 'marks_obtained' : 'marks',
         'has_exam_date' => in_array('exam_date', $erColumns),
+        'has_created_by' => in_array('created_by', $erColumns),
+        'has_school_id' => in_array('school_id', $erColumns),
         'columns' => $erColumns
     ];
 }
@@ -289,6 +291,18 @@ function handleUploadResults($db, $user) {
                         $binds[':exam_date'] = $exam['exam_date'] ?? date('Y-m-d');
                     }
 
+                    if ($schema['has_created_by']) {
+                        $cols[] = 'created_by';
+                        $vals[] = ':created_by';
+                        $binds[':created_by'] = $user['id'];
+                    }
+
+                    if ($schema['has_school_id']) {
+                        $cols[] = 'school_id';
+                        $vals[] = ':school_id';
+                        $binds[':school_id'] = $user['school_id'];
+                    }
+
                     $insertQuery = "INSERT INTO exam_results (" . implode(', ', $cols) . ") 
                                     VALUES (" . implode(', ', $vals) . ")";
                     $insertStmt = $db->prepare($insertQuery);
@@ -375,6 +389,18 @@ function handleUploadResults($db, $user) {
                         $cols[] = 'exam_date';
                         $vals[] = ':exam_date';
                         $binds[':exam_date'] = $exam['exam_date'] ?? date('Y-m-d');
+                    }
+
+                    if ($schema['has_created_by']) {
+                        $cols[] = 'created_by';
+                        $vals[] = ':created_by';
+                        $binds[':created_by'] = $user['id'];
+                    }
+
+                    if ($schema['has_school_id']) {
+                        $cols[] = 'school_id';
+                        $vals[] = ':school_id';
+                        $binds[':school_id'] = $user['school_id'];
                     }
 
                     $insertQuery = "INSERT INTO exam_results (" . implode(', ', $cols) . ") 

@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
     Plus, Search, DollarSign, CheckCircle, AlertCircle, Clock,
-    MoreVertical, User, Briefcase, LayoutGrid, Users
+    MoreVertical, User, Briefcase, LayoutGrid, Users, Download
 } from 'lucide-react';
-import { feeService, studentService, websiteService } from '../api/services';
+import { feeService, studentService, websiteService, schoolService } from '../api/services';
+import { generatePaymentInvoice } from '../utils/PdfGenerator';
 import Modal from '../components/Modal';
 import toast from 'react-hot-toast';
 import '../timetable.css';
@@ -53,6 +54,7 @@ const Fees: React.FC = () => {
     });
     const [saving, setSaving] = useState(false);
     const [schoolQR, setSchoolQR] = useState<string | null>(null);
+    const [schoolInfo, setSchoolInfo] = useState<any>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -90,6 +92,9 @@ const Fees: React.FC = () => {
                 setSchoolQR(r.data.data.qr_code);
             }
         });
+        schoolService.getProfile().then(r => {
+            if (r.data?.success) setSchoolInfo(r.data.data);
+        }).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -131,6 +136,29 @@ const Fees: React.FC = () => {
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleDownloadInvoice = (studentData: any, feeData: any) => {
+        const school = schoolInfo || { name: 'School' };
+        generatePaymentInvoice(
+            { name: school.name, address: school.address, phone: school.phone, email: school.email, website: school.website, principal_name: school.principal_name },
+            {
+                invoiceNumber: `INV-${Date.now().toString(36).toUpperCase()}`,
+                date: new Date().toLocaleDateString('en-IN'),
+                student: {
+                    name: `${studentData.first_name || ''} ${studentData.last_name || ''}`.trim(),
+                    studentId: studentData.student_id || studentData.student_code || '',
+                    class: studentData.class_name || '',
+                    section: studentData.section_name || '',
+                },
+                items: [{ description: feeData.fee_name || 'Fee Payment', amount: Number(feeData.amount || 0) }],
+                totalAmount: Number(feeData.amount || 0),
+                paidAmount: Number(feeData.paid_amount || feeData.amount || 0),
+                paymentMethod: payForm.payment_method || 'cash',
+                transactionId: payForm.transaction_id || '',
+            }
+        );
+        toast.success('Invoice PDF downloaded!');
     };
 
     const pf = (k: string, v: any) => setPayForm(p => ({ ...p, [k]: v }));
@@ -307,7 +335,18 @@ const Fees: React.FC = () => {
                                         </td>
 
                                         <td style={{ textAlign: 'right' }}>
-                                            <button style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><MoreVertical size={18} /></button>
+                                            <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                                                {viewMode === 'students' && (
+                                                    <button
+                                                        title="Download Invoice"
+                                                        onClick={() => handleDownloadInvoice(r, { fee_name: r.fee_category || 'Fee', amount: exp, paid_amount: col })}
+                                                        style={{ background: 'rgba(99,102,241,0.1)', border: 'none', color: 'var(--primary-light)', cursor: 'pointer', padding: 6, borderRadius: 8, display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <Download size={15} />
+                                                    </button>
+                                                )}
+                                                <button style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><MoreVertical size={18} /></button>
+                                            </div>
                                         </td>
                                     </tr>
                                 );

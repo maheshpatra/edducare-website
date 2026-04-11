@@ -398,7 +398,7 @@ export default function Home() {
               >
                 <div className="aspect-square w-full h-full">
                   <img
-                    src={resolveImagePath(item.image_path, FILE_BASE) || item.image_path}
+                    src={resolveImagePath(item.image_path, FILE_BASE_NEW) || item.image_path}
                     alt={item.caption}
                     className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700"
                   />

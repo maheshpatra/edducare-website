@@ -7,6 +7,9 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 
 import Login from './pages/Login';
+import ContactMessages from './pages/superadmin/ContactMessages';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import Teachers from './pages/Teachers';
@@ -24,7 +27,6 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import WebsiteSettings from './pages/WebsiteSettings';
 import Admissions from './pages/Admissions';
-import ContactMessages from './pages/ContactMessages';
 import AcademicSessions from './pages/AcademicSessions';
 import PromoteStudents from './pages/PromoteStudents';
 import HumanResource from './pages/HumanResource';
@@ -33,6 +35,7 @@ import Subjects from './pages/Subjects';
 import SuperAdminDashboard from './pages/superadmin/Dashboard';
 import SuperAdminSchools from './pages/superadmin/Schools';
 import SuperAdminPackages from './pages/superadmin/Packages';
+import SuperAdminCMS from './pages/superadmin/CMSEditor';
 
 import './index.css';
 
@@ -61,6 +64,8 @@ const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
   '/messages': { title: 'Contact Messages', subtitle: 'Respond to student and visitor inquiries.' },
   '/superadmin/schools': { title: 'Managed Schools', subtitle: 'Oversee and control all schools on the platform.' },
   '/superadmin/packages': { title: 'Pricing Models', subtitle: 'Manage subscription plans and pricing.' },
+  '/superadmin/cms': { title: 'CMS Manager', subtitle: 'Manage Terms, Privacy Policy, and other legal pages.' },
+  '/superadmin/contacts': { title: 'Site Inquiries', subtitle: 'Manage contact form submissions.' },
 };
 
 const AppShell: React.FC = () => {
@@ -84,6 +89,8 @@ const AppShell: React.FC = () => {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -125,11 +132,12 @@ const AppShell: React.FC = () => {
             <Route path="/settings" element={<Settings />} />
             <Route path="/website" element={<WebsiteSettings />} />
             <Route path="/admissions" element={<Admissions />} />
-            <Route path="/messages" element={<ContactMessages />} />
 
             {/* Super Admin Routes */}
             <Route path="/superadmin/schools" element={<SuperAdminSchools />} />
             <Route path="/superadmin/packages" element={<SuperAdminPackages />} />
+            <Route path="/superadmin/cms" element={<SuperAdminCMS />} />
+            <Route path="/superadmin/contacts" element={<ContactMessages />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

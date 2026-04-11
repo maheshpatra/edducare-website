@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@config "../tailwind.config.js";
+
+:root {
+  --primary: #3b82f6;
+  --secondary: #1e293b;
+  --accent: #f59e0b;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-secondary bg-white overflow-x-hidden;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-8 py-4 bg-primary text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 flex items-center justify-center;
+  }
+  
+  .btn-outline {
+    @apply px-8 py-4 border-2 border-slate-200 text-slate-600 rounded-2xl font-bold hover:bg-slate-50 hover:border-primary hover:text-primary transition-all flex items-center justify-center;
+  }
+
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-400;
+  }
+}
+
+/* Custom Utilities */
+.mesh-gradient {
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(217,100%,78%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(217,100%,84%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(217,100%,78%,1) 0, transparent 50%);
+}
+
+.blob {
+  @apply absolute rounded-full filter blur-3xl opacity-20 -z-10;
+  background: linear-gradient(135deg, var(--primary), #60a5fa);
+}
+
+.grid-pattern {
+  background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 0);
+  background-size: 32px 32px;
+}
+
+.section-label {
+  @apply inline-block px-4 py-1.5 bg-blue-50 text-primary text-xs font-bold uppercase tracking-widest rounded-full mb-6;
+}
+
+.section-title {
+  @apply text-4xl md:text-5xl font-black text-slate-900 mb-6 leading-tight;
+}

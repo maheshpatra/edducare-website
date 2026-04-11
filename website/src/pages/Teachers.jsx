@@ -47,18 +47,18 @@ export default function Teachers() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {displayTeachers.map((teacher, idx) => (
-              <motion.div 
-                key={teacher.id || idx} 
-                {...fadeInUp} 
+              <motion.div
+                key={teacher.id || idx}
+                {...fadeInUp}
                 transition={{ delay: idx * 0.08 }}
                 className="card group"
               >
                 <div className="aspect-[4/5] overflow-hidden relative">
-                  <img 
-                    src={teacher.profile_image 
-                      ? resolveImagePath(teacher.profile_image, FILE_BASE) 
+                  <img
+                    src={teacher.profile_image
+                      ? resolveImagePath(teacher.profile_image, FILE_BASE)
                       : `https://i.pravatar.cc/500?u=${teacher.email}`}
-                    alt={teacher.first_name} 
+                    alt={teacher.first_name}
                     className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
                   />
                   <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent text-white">

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Download, FileText, Calendar, Users, DollarSign, Award, ChevronRight, Filter, Search, Clock, FileDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../api/config';
-import { reportService, classService } from '../api/services';
+import { reportService, classService, schoolService } from '../api/services';
+import { generateReportPdf } from '../utils/PdfGenerator';
 
 const REPORT_TYPES = [
     { id: 'attendance', icon: Calendar, label: 'Attendance Report', desc: 'Daily/monthly attendance records per class or student', color: '#6366f1' },
@@ -28,9 +29,13 @@ const Reports: React.FC = () => {
         { name: 'Fee_Report_Jan_2026.csv', type: 'Financial', size: '24 KB', date: '2026-02-20', format: 'csv' },
         { name: 'Exam_Results_Term1.csv', type: 'Academic', size: '18 KB', date: '2026-02-15', format: 'csv' },
     ]);
+    const [schoolInfo, setSchoolInfo] = useState<any>(null);
 
     useEffect(() => {
         fetchClasses();
+        schoolService.getProfile().then(r => {
+            if (r.data?.success) setSchoolInfo(r.data.data);
+        }).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -104,10 +109,28 @@ const Reports: React.FC = () => {
                 
                 toast.success('Report downloaded successfully!');
             } else {
-                // For PDF (HTML view), we can open in new tab
-                // We'll still use window.open but now the backend supports token in URL if headers fail
-                window.open(reportUrl, '_blank');
-                toast.success('Report opened in new tab for printing');
+                // For PDF, use client-side generation with jsPDF
+                try {
+                    const response = await api.get(reportUrl, { responseType: 'json' });
+                    const data = response.data;
+                    const school = schoolInfo || { name: 'School' };
+                    const reportMeta = REPORT_TYPES.find(r => r.id === selected);
+                    generateReportPdf(
+                        { name: school.name, address: school.address, phone: school.phone, email: school.email },
+                        {
+                            title: reportMeta?.label || 'Report',
+                            subtitle: `${dateFrom ? `From ${dateFrom}` : ''} ${dateTo ? `to ${dateTo}` : ''} • Generated ${new Date().toLocaleDateString('en-IN')}`,
+                            columns: data.columns || ['#', 'Item', 'Value'],
+                            rows: data.rows || [['1', 'No data', '—']],
+                            summaryItems: data.summary || [],
+                        }
+                    );
+                    toast.success('PDF report downloaded!');
+                } catch {
+                    // Fallback: open backend URL in new tab  
+                    window.open(reportUrl, '_blank');
+                    toast.success('Report opened in new tab');
+                }
             }
 
             // Update recent reports list
